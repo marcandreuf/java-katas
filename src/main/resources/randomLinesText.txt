@@ -1,0 +1,36 @@
+Hi all, 
+
+This is my last contribution to the open source community. Thanks to the brilliant support from 
+Galette's team. 
+All started after I needed to find an open source memebership management web application 
+for a small comunity where I voluteer to help. We neede a solution to track the members, 
+payments and all about managing a commuity. Something better and more practical than the 
+impressive Excel file that we where using at the very first days.
+
+My first step was to import that excel file, a list of names and emials, to a new google account. 
+That account helped us to manage contacts in a better way, where we could edit and arrange data 
+in a more human way, also it was possible to colaborate and work as a team. 
+
+That Gmail account was a temporal solution anyway, something in between an Excel file and a proper 
+web application to manage memberships. I carreied out a quick research about CRMs, membership 
+applicaitons, and so on. I found many, far to many, but most of them not open source, so easy 
+to cut the list. 
+
+We needed something simple, without one thousand tools and functionalities where the user gets 
+lost, open source and well developed in order to be extended as required.
+
+I was very happy to find Galette, an open source solution developed in France by a team leaded
+ by Cwiklinski Johan. Even all documentation is almost in French, I had a great support from Johan 
+ and other members in order to help me to develop a plugin that connects to Google and imports 
+ all the contacts of a given group. This is just a first version of the plugin and I am willing 
+ to spend more time developing some improvements. 
+
+If you need any help about this plugin or about how to use Google OAuth 2.0 in PHP just write 
+me a commnent and I get in touch with you as soon as I have time to reply. 
+
+This is the link to repository, for now all documentation is in a text file, I will work on 
+proper documentaion in Galette's web site later on. 
+
+That is all, thanks for reading,
+
+Posted by Marc Andreu.

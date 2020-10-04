@@ -1,0 +1,8 @@
+The mouse needs to move throughout the maze, cell by cell, until 
+it finds the cheese.
+
+A mouse can:
+  move forward one position at a time
+  turn left or right
+  check the surrounding cells
+  
