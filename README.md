@@ -1,2 +1,2 @@
 # java-katas
-Exercises and practices with JAVA code. These are exercises from books, articles and learning ideas.
+Exercises and practices with JAVA code. These are exercises from books, articles and learning concepts.
