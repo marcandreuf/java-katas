@@ -1,0 +1,27 @@
+java-katas
+Copyright (c) 2014-2026 Marc Andreu
+
+This project is released under the MIT License (see LICENSE), with the
+exception of the files listed below.
+
+--------------------------------------------------------------------------
+Oracle Java Tutorials sample code
+--------------------------------------------------------------------------
+
+The following files are derived from the Oracle Java Tutorials and remain
+under Oracle's 3-clause BSD licence. Each file carries the full notice in
+its own header, which is retained unchanged. They are included here as
+exercise material and have in some cases been modified.
+
+  src/main/java/org/mandfer/practices/collections/FindDups.java
+  src/main/java/org/mandfer/practices/concurrency/BadThreads.java
+  src/main/java/org/mandfer/practices/concurrency/Safelock.java
+  src/main/java/org/mandfer/practices/concurrency/forkjoin/ForkBlur.java
+  src/main/java/org/mandfer/practices/concurrency/guardedLock/Consumer.java
+  src/main/java/org/mandfer/practices/concurrency/guardedLock/Drop.java
+  src/main/java/org/mandfer/practices/concurrency/guardedLock/Producer.java
+  src/main/java/org/mandfer/practices/concurrency/guardedLock/ProducerConsumerExample.java
+
+  Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+
+Everything else in src/ is original work under the MIT License.
