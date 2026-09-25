@@ -12,7 +12,7 @@ import static org.hamcrest.Matchers.*;
  * @author marcandreuf@gmail.com
  *
  */
-public class SumWordsLengthCallableResultsSample {
+public class SumWordsLengthCallableResultsSampleTest {
 	
 	private static final String inputWords = "hello goodbye this is marc";
 	

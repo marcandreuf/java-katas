@@ -23,7 +23,7 @@ stacked on top of each other:
 with a test, before the rewrite, so the fix is visible.
 
 **`algorithm/FairWorkLoad.java`**, **`algorithm/DuplicateNumber.java`** and
-**`ProductsOfArrayElements`** are index-loop algorithms. Some will read better as streams and some
+**`ProductsOfArrayElementsTest`** are index-loop algorithms. Some will read better as streams and some
 will not. **Deciding which is the exercise**, not converting all of them.
 
 ## The exercise

@@ -1,7 +1,7 @@
 package org.mandfer.practices;
 
 import java.util.Arrays;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  */
 
-public class ProductsOfArrayElements {
+public class ProductsOfArrayElementsTest {
 	
 	
 	private int[] arInput = {1,3,5,2};
