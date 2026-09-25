@@ -1,18 +1,41 @@
 # 00. Start here
 
-## Step zero: make it build
+## Step zero, done 2026-09-25
 
-The repo does not compile as it stands. `src/test/java/org/mandfer/practices/ProductsOfArrayElements.java`
-imports `org.apache.commons.lang.ArrayUtils`, which is commons-lang **2.x**. The only such
-dependency declared is commons-lang**3**, whose package is `org.apache.commons.lang3`.
+The repo did not compile. `ProductsOfArrayElements.java` imported `org.apache.commons.lang.ArrayUtils`,
+commons-lang **2.x**, while the build provided commons-lang**3**, whose package is
+`org.apache.commons.lang3`. Fixed by repointing the import.
 
-That is the first exercise, and it is a one-line change. Decide which of the two you want:
+Two things fell out of it that were worth more than the fix.
 
-- point the import at `org.apache.commons.lang3.ArrayUtils`, or
-- drop the dependency and do the array work with `java.util.Arrays` and streams.
+**Three test classes had never run.** Surefire only picks up `Test*`, `*Test`, `*Tests` and
+`*TestCase`. `ProductsOfArrayElements` and `SumWordsLengthCallableResultsSample` matched none of
+them, so six tests sat in the repo for years without executing. Both were renamed and all six pass.
+`RotateMatrix90DegreeInPlace` turned out to have no `@Test` methods at all: it is a `main` program
+in the test tree, and still needs a home.
 
-The second is the better answer, and it is the smallest possible version of the question this
-whole track asks: **what is this dependency still buying me?**
+**The dependency question is still open**, and it is the smallest version of what this whole track
+asks: *what is this dependency still buying me?* commons-lang3 now earns its place with exactly one
+call, `ArrayUtils.removeElement`, in `otherValues()`. Replacing it with `java.util.Arrays` and
+streams is a real exercise with a trap in it, described in
+[`09-streams-and-optional.md`](09-streams-and-optional.md): `removeElement` drops only the **first**
+occurrence, while `filter(v -> v != elem)` drops **every** one. The existing test data is all
+distinct values, so it cannot tell the two apart and would stay green while the behaviour changed.
+Write the duplicates test first.
+
+## Starting an exercise
+
+The build is green. The outstanding work is the disabled tests:
+
+    grep -rn "@Disabled" src/test
+
+Each carries a reason naming the document that owns it. **Deleting that one annotation is how you
+start an exercise**, and it turns a silent gap into a failing test with a specific message. Commit
+the deletion together with the fix.
+
+Never add a bare `@Disabled`. `FairWorkloadTest.testMaxNumPerSixWorkers` was switched off in 2014
+with a note saying the cause was never found, and it stayed off for twelve years. That is the
+failure mode this convention exists to prevent.
 
 ## How the track works
 

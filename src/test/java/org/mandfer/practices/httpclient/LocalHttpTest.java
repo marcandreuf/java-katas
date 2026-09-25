@@ -1,12 +1,14 @@
 package org.mandfer.practices.httpclient;
 
 import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Disabled("Exercise: docs/10-sequenced-collections-and-httpclient.md. Delete this line to begin.")
 class LocalHttpTest {
 
     @Test

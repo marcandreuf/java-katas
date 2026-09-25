@@ -39,9 +39,16 @@ happen before anything else: the repo does not currently compile.
     mvn verify                  # everything
     mvn -q -Dtest=BinarySearchTest test   # one test
 
-**The build is red right now**, and that is the starting state rather than a broken repo. Two
-exercises ship unfinished on purpose (`sealedtypes/ToolCallResult`, `httpclient/LocalHttp`), and
-`docs/00-start-here.md` names a compile error that is the first thing to fix.
+**The build is green, and the outstanding work is the disabled tests:**
+
+    grep -rn "@Disabled" src/test
+
+Every one of them carries a reason naming the document that owns it. Starting an exercise means
+deleting that one annotation, which turns a silent gap into a failing test. Commit the deletion
+together with the fix, so the diff shows the debt being taken on and paid in the same change.
+
+**No bare `@Disabled`.** A skip without a reason is how `FairWorkloadTest` stayed switched off from
+2014 to 2026.
 
 Targets Java 21, which is the floor that virtual threads, sequenced collections and record patterns
 need. CI builds on 21 and 25 so the code stays forward-compatible; raise `<java.release>` in

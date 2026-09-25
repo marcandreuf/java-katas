@@ -17,8 +17,9 @@ restore the flag with `Thread.currentThread().interrupt()`, or let the exception
 **`concurrency/forkjoin/ForkBlur.java`** is a `RecursiveAction` fork/join blur over a
 `BufferedImage`. Leave the algorithm alone. It is also the workload for document 11.
 
-**`SumWordsLengthCallableResultsSampleTest`** in the test tree is a `Callable`/`Future` sample sitting
-in `src/test` without being a test. Decide where it belongs.
+**`SumWordsLengthCallableResultsSampleTest`** is three `Callable`/`Future` tests that never ran
+until the class was renamed to match the Surefire pattern. They pass. Read them before you touch
+`SumWordsLength`, because they are the only description of what its current behaviour is.
 
 ## The exercise
 

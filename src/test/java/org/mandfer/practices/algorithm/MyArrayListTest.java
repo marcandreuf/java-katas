@@ -21,14 +21,14 @@ public class MyArrayListTest {
     }
 
     @Test
-    @Disabled
+    @Disabled("Exercise: docs/10-sequenced-collections-and-httpclient.md. MyArrayList.size() returns the array length, so this reports 10 when empty.")
     public void testGetSize(){
         int size = myArrayList.size();
         assertTrue(size == 0);
     }
 
     @Test
-    @Disabled
+    @Disabled("Exercise: docs/10-sequenced-collections-and-httpclient.md. MyArrayList is unfinished: no get(), no remove(), and add() overflows at 10.")
     public void testAddElement(){
         myArrayList.add("hello");
         assertTrue(myArrayList.size()>0);

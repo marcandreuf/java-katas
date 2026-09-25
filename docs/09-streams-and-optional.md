@@ -22,9 +22,17 @@ stacked on top of each other:
 `Files.readAllLines` or `Files.lines` collapses most of it. Do the off-by-one as its own commit
 with a test, before the rewrite, so the fix is visible.
 
-**`algorithm/FairWorkLoad.java`**, **`algorithm/DuplicateNumber.java`** and
-**`ProductsOfArrayElementsTest`** are index-loop algorithms. Some will read better as streams and some
-will not. **Deciding which is the exercise**, not converting all of them.
+**`algorithm/FairWorkLoad.java`** and **`algorithm/DuplicateNumber.java`** are index-loop
+algorithms. Some will read better as streams and some will not. **Deciding which is the exercise**,
+not converting all of them.
+
+`FairWorkloadTest` also holds the oldest debt in the repo: `testMaxNumPerSixWorkers` has been
+`@Disabled` since 2014 with a note saying the cause was never found. Diagnose it before you
+modernise anything around it, because a rewrite that makes a failing test pass by accident has
+taught you nothing.
+
+**`ProductsOfArrayElementsTest`** carries the duplicates trap described below, in
+`otherValues()`.
 
 ## The exercise
 
