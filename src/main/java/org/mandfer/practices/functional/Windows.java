@@ -10,7 +10,7 @@ import java.util.List;
  * built out of the fixed set -- map, filter, flatMap, limit -- and anything stateful, like
  * "group these into threes", meant leaving the stream and writing a loop.
  *
- * Gatherers (JEP 485) shipped final in Java 24. See docs/22-stream-gatherers.md.
+ * Gatherers (JEP 485) shipped final in Java 24. See docs/modernization/22-stream-gatherers.md.
  *
  * NOTE: needs --release 24. See docs/env-setup.md.
  *
@@ -29,7 +29,7 @@ import java.util.List;
  *         this, which is the entire argument for the feature.
  * TODO 5: timesTenConcurrently() -- Gatherers.mapConcurrent, which runs the mapper on virtual
  *         threads with a concurrency limit and PRESERVES ORDER. Compare it with
- *         docs/15-completable-future.md and say which you would use for N HTTP calls.
+ *         docs/modernization/15-completable-future.md and say which you would use for N HTTP calls.
  */
 public final class Windows {
 

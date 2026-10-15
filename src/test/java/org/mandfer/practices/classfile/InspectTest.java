@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Exercise: docs/24-class-file-api.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/24-class-file-api.md. Delete this line to begin.")
 class InspectTest {
 
     @Test

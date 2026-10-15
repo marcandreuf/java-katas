@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Exercise: docs/20-free-diagnostics.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/20-free-diagnostics.md. Delete this line to begin.")
 class NullPathsTest {
 
     private static final NullPaths.Person EMPLOYER_NULL =

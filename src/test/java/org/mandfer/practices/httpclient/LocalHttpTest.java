@@ -8,7 +8,7 @@ import java.net.URI;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/10-sequenced-collections-and-httpclient.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/10-sequenced-collections-and-httpclient.md. Delete this line to begin.")
 class LocalHttpTest {
 
     @Test

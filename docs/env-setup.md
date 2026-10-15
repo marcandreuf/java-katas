@@ -73,7 +73,7 @@ build on 25.
 ### Looking further ahead
 
 Java 27 shipped in September 2026 and this track does not cover it yet. To try the rows in
-[`INDEX.md`](INDEX.md) that mention it — compact object headers on by default, post-quantum
+[`INDEX.md`](modernization/INDEX.md) that mention it — compact object headers on by default, post-quantum
 TLS — install it as a second JDK:
 
     sdk install java 27.0.0.0+35-tem

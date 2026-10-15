@@ -10,9 +10,9 @@ import java.util.Optional;
  * This is new code, and the reason is itself the finding: `_` is for things you are FORCED to
  * declare and do not use, and the old code here has almost none of those. What it has instead
  * is variables that are declared, unused, and still named -- which the compiler never
- * complained about. See docs/21-unnamed-and-primitive-patterns.md.
+ * complained about. See docs/modernization/21-unnamed-and-primitive-patterns.md.
  *
- * Builds on docs/02-sealed-types.md and docs/03-pattern-matching.md. Do those first.
+ * Builds on docs/modernization/02-sealed-types.md and docs/modernization/03-pattern-matching.md. Do those first.
  *
  * TODO 1: area() -- an exhaustive switch with record patterns. Every variant carries a label
  *         you do not need. Bind it to `_`. Then try naming it `label` and leaving it unused,

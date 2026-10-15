@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/26-scoped-values-and-structured-concurrency.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/26-scoped-values-and-structured-concurrency.md. Delete this line to begin.")
 class TenantContextTest {
 
     @Test

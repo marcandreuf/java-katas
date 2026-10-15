@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Exercise: docs/19-randomness-and-numerics.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/19-randomness-and-numerics.md. Delete this line to begin.")
 class RollsTest {
 
     private static final String ALGORITHM = "L64X128MixRandom";

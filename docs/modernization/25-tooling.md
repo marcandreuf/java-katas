@@ -41,7 +41,7 @@ No `.class` files are written. It compiles in memory and runs.
 
 See **[`snippets/Hello.java`](snippets/Hello.java)**, which runs:
 
-    java docs/snippets/Hello.java
+    java docs/modernization/snippets/Hello.java
 
     void main() {
         IO.println("Hello from a compact source file.");

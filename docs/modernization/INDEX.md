@@ -280,7 +280,7 @@ this track added it. Java 8 is not revision here, it is new ground.
 | 15, 22 | 26 + preview | `mvn -Ppreview verify`. Never enable preview by default. |
 | 12 | 26 + native access | Surefire already passes the flag; [doc 23](23-foreign-function-and-memory.md) says why. |
 
-[`env-setup.md`](env-setup.md) has the commands, including installing JDK 27 alongside 25.
+[`../env-setup.md`](../env-setup.md) has the commands, including installing JDK 27 alongside 25.
 
 ## Java 27, not yet covered
 

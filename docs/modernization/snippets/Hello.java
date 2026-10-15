@@ -4,8 +4,8 @@
 /// class name of its own, so it does not belong in `src/main/java`. Run it directly:
 ///
 /// ```
-/// java docs/snippets/Hello.java
-/// java docs/snippets/Hello.java world
+/// java docs/modernization/snippets/Hello.java
+/// java docs/modernization/snippets/Hello.java world
 /// ```
 ///
 /// Three features at once, all final in Java 25 (JEP 512):

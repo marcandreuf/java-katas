@@ -12,8 +12,8 @@ import java.util.function.Supplier;
  * The old code does this job with raw Futures: SumWordsLength:28-40 submits one Callable per
  * word, collects Future<Integer> into a HashSet, then blocks on get() in a loop -- and
  * swallows the ExecutionException, returning a partial sum as though it were correct.
- * docs/06-virtual-threads.md owns that file. This class is where to learn the composition API
- * before deciding whether you want it. See docs/15-completable-future.md.
+ * docs/modernization/06-virtual-threads.md owns that file. This class is where to learn the composition API
+ * before deciding whether you want it. See docs/modernization/15-completable-future.md.
  *
  * TODO 1: implement all(). Run every supplier on the given Executor and complete with the
  *         results IN INPUT ORDER, not completion order. allOf() is the tool and it returns

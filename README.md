@@ -13,53 +13,53 @@ something built to be rewritten.
 `docs/` has one document per concept. Each names the files here that carry the old idiom, says what
 to change, and asks what got worse afterwards.
 
-**Start with [`docs/00-start-here.md`](docs/00-start-here.md).** It covers the one thing that has to
+**Start with [`docs/modernization/00-start-here.md`](docs/modernization/00-start-here.md).** It covers the one thing that has to
 happen before anything else: the repo does not currently compile.
 
 | # | Concept |
 | --- | --- |
-| [00](docs/00-start-here.md) | Start here, and make it build |
-| [01](docs/01-records.md) | Records |
-| [02](docs/02-sealed-types.md) | Sealed types and exhaustiveness |
-| [03](docs/03-pattern-matching.md) | Pattern matching |
-| [04](docs/04-switch-and-text-blocks.md) | Switch expressions and text blocks |
-| [05](docs/05-var.md) | `var`, and the diamond |
-| [06](docs/06-virtual-threads.md) | Virtual threads |
-| [07](docs/07-classic-concurrency.md) | Classic concurrency |
-| [08](docs/08-memory-model.md) | The memory model |
-| [09](docs/09-streams-and-optional.md) | Streams and Optional |
-| [10](docs/10-sequenced-collections-and-httpclient.md) | Sequenced collections, HttpClient |
-| [11](docs/11-jvm-diagnostics.md) | JVM production diagnostics |
-| [12](docs/12-lambdas-and-method-references.md) | Lambdas, functional interfaces, method references |
-| [13](docs/13-java-time.md) | `java.time` |
-| [14](docs/14-map-defaults-and-collectors.md) | `Map` defaults, comparators, collectors |
-| [15](docs/15-completable-future.md) | `CompletableFuture` |
-| [16](docs/16-collection-factories.md) | Collection factories and immutability |
-| [17](docs/17-stream-and-optional-additions.md) | Stream and `Optional` additions after 8 |
-| [18](docs/18-files-strings-and-charsets.md) | Files, strings and charsets |
-| [19](docs/19-randomness-and-numerics.md) | Randomness and numerics |
-| [20](docs/20-free-diagnostics.md) | The diagnostics you get for free |
-| [21](docs/21-unnamed-and-primitive-patterns.md) | Unnamed variables, and primitive patterns |
-| [22](docs/22-stream-gatherers.md) | Stream gatherers |
-| [23](docs/23-foreign-function-and-memory.md) | Foreign function and memory |
-| [24](docs/24-class-file-api.md) | The Class-File API |
-| [25](docs/25-tooling.md) | Tooling: jshell, source launch, jwebserver, markdown javadoc |
-| [26](docs/26-scoped-values-and-structured-concurrency.md) | Scoped values, structured concurrency |
-| [27](docs/27-module-imports-and-compact-sources.md) | Module imports, compact source files |
-| [28](docs/28-flexible-constructor-bodies.md) | Flexible constructor bodies |
-| [29](docs/29-http3-and-the-httpclient.md) | HTTP/3 and the HttpClient |
-| [30](docs/30-upgrade-hazards.md) | Upgrade hazards: deprecations and removals |
-| [31](docs/31-runtime-defaults.md) | Runtime defaults: GC, AOT, JFR |
-| [32](docs/32-crypto.md) | Crypto: key derivation, post-quantum, PEM |
-| [33](docs/33-preview-shelf.md) | The preview shelf |
-| [34](docs/34-measuring-it-properly.md) | Measuring it properly |
+| [00](docs/modernization/00-start-here.md) | Start here, and make it build |
+| [01](docs/modernization/01-records.md) | Records |
+| [02](docs/modernization/02-sealed-types.md) | Sealed types and exhaustiveness |
+| [03](docs/modernization/03-pattern-matching.md) | Pattern matching |
+| [04](docs/modernization/04-switch-and-text-blocks.md) | Switch expressions and text blocks |
+| [05](docs/modernization/05-var.md) | `var`, and the diamond |
+| [06](docs/modernization/06-virtual-threads.md) | Virtual threads |
+| [07](docs/modernization/07-classic-concurrency.md) | Classic concurrency |
+| [08](docs/modernization/08-memory-model.md) | The memory model |
+| [09](docs/modernization/09-streams-and-optional.md) | Streams and Optional |
+| [10](docs/modernization/10-sequenced-collections-and-httpclient.md) | Sequenced collections, HttpClient |
+| [11](docs/modernization/11-jvm-diagnostics.md) | JVM production diagnostics |
+| [12](docs/modernization/12-lambdas-and-method-references.md) | Lambdas, functional interfaces, method references |
+| [13](docs/modernization/13-java-time.md) | `java.time` |
+| [14](docs/modernization/14-map-defaults-and-collectors.md) | `Map` defaults, comparators, collectors |
+| [15](docs/modernization/15-completable-future.md) | `CompletableFuture` |
+| [16](docs/modernization/16-collection-factories.md) | Collection factories and immutability |
+| [17](docs/modernization/17-stream-and-optional-additions.md) | Stream and `Optional` additions after 8 |
+| [18](docs/modernization/18-files-strings-and-charsets.md) | Files, strings and charsets |
+| [19](docs/modernization/19-randomness-and-numerics.md) | Randomness and numerics |
+| [20](docs/modernization/20-free-diagnostics.md) | The diagnostics you get for free |
+| [21](docs/modernization/21-unnamed-and-primitive-patterns.md) | Unnamed variables, and primitive patterns |
+| [22](docs/modernization/22-stream-gatherers.md) | Stream gatherers |
+| [23](docs/modernization/23-foreign-function-and-memory.md) | Foreign function and memory |
+| [24](docs/modernization/24-class-file-api.md) | The Class-File API |
+| [25](docs/modernization/25-tooling.md) | Tooling: jshell, source launch, jwebserver, markdown javadoc |
+| [26](docs/modernization/26-scoped-values-and-structured-concurrency.md) | Scoped values, structured concurrency |
+| [27](docs/modernization/27-module-imports-and-compact-sources.md) | Module imports, compact source files |
+| [28](docs/modernization/28-flexible-constructor-bodies.md) | Flexible constructor bodies |
+| [29](docs/modernization/29-http3-and-the-httpclient.md) | HTTP/3 and the HttpClient |
+| [30](docs/modernization/30-upgrade-hazards.md) | Upgrade hazards: deprecations and removals |
+| [31](docs/modernization/31-runtime-defaults.md) | Runtime defaults: GC, AOT, JFR |
+| [32](docs/modernization/32-crypto.md) | Crypto: key derivation, post-quantum, PEM |
+| [33](docs/modernization/33-preview-shelf.md) | The preview shelf |
+| [34](docs/modernization/34-measuring-it-properly.md) | Measuring it properly |
 
 **One concept per commit.** The diff is the deliverable.
 
 ## Reviewing the language, Java 8 to 27
 
 The table above is ordered by **concept**, smallest change first, which is the right order for
-modernising this repo. **[`docs/INDEX.md`](docs/INDEX.md) is the second ordering**: every
+modernising this repo. **[`docs/modernization/INDEX.md`](docs/modernization/INDEX.md) is the second ordering**: every
 developer-facing feature from Java 8 to Java 27, in the release it landed, pointing at the
 document that teaches it — and saying plainly which ones are not taught and why.
 

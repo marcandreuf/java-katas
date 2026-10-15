@@ -9,7 +9,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/21-unnamed-and-primitive-patterns.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/21-unnamed-and-primitive-patterns.md. Delete this line to begin.")
 class UnnamedTest {
 
     private static final List<Unnamed.Shape> SHAPES = List.of(

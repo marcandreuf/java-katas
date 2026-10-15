@@ -11,7 +11,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled("Exercise: docs/16-collection-factories.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/16-collection-factories.md. Delete this line to begin.")
 class ImmutableTest {
 
     @Test

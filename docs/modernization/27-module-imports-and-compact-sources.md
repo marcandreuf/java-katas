@@ -8,7 +8,7 @@ Two pieces:
 
 - **`modern/ModuleImports.java`**, three TODOs, compiled and tested
 - **[`snippets/Hello.java`](snippets/Hello.java)**, three TODOs, run directly with
-  `java docs/snippets/Hello.java` — **not compiled by Maven**, and TODO 3 is about why
+  `java docs/modernization/snippets/Hello.java` — **not compiled by Maven**, and TODO 3 is about why
 
 Both are new code. This stage also **reframes the JPMS paper exercise** in
 [doc 10](10-sequenced-collections-and-httpclient.md): that one asks you to add a
@@ -61,7 +61,7 @@ type and the other hides an origin" is the start of it.
 
 No `package`, no `class`, no `static`, no `String[] args`, no `System.out`. Run it:
 
-    java docs/snippets/Hello.java
+    java docs/modernization/snippets/Hello.java
 
 Four separate things were removed, and it is worth separating them:
 
@@ -80,7 +80,7 @@ Try to call `Hello`'s `main` from a class in `src/main/java`. **You cannot.** Th
 has no name you can write, so nothing outside the file can refer to it, and it is in the default
 package so nothing in a named package can reach it even by reflection-free means.
 
-**That is why this file is in `docs/snippets/` and not in the source tree.** Compact source files
+**That is why this file is in `docs/modernization/snippets/` and not in the source tree.** Compact source files
 are for programs that are one file and stay one file. The moment you need a second class you want
 to call, you promote the file to a normal class — which is exactly the transition JEP 512 says it
 is designed to make gradual, and it is worth having felt where the cliff is.

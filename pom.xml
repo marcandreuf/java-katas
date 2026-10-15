@@ -12,7 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Raised from 21 to 26 for the release-ordered track (docs/INDEX.md), which needs:
+        <!-- Raised from 21 to 26 for the release-ordered track (docs/modernization/INDEX.md), which needs:
              22 for the FFM API and unnamed patterns, 24 for stream gatherers and the
              class-file API, 25 for scoped values, module imports and flexible constructor
              bodies, 26 for HTTP/3 in the HttpClient. The original concept track (docs 00 to
@@ -57,7 +57,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Used by one test. See docs/00-start-here.md: the import in that file still names
+        <!-- Used by one test. See docs/modernization/00-start-here.md: the import in that file still names
              commons-lang 2.x, which this dependency does not provide. -->
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -87,10 +87,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${surefire.plugin.version}</version>
                 <configuration>
-                    <!-- The FFM exercise (docs/23) calls a restricted method. Without the
+                    <!-- The FFM exercise (docs/modernization/23) calls a restricted method. Without the
                          native-access flag the test still passes but prints four lines of
                          WARNING, and from a later release it will be blocked outright.
-                         docs/23 explains why that flag exists rather than being the default. -->
+                         docs/modernization/23 explains why that flag exists rather than being the default. -->
                     <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
@@ -148,7 +148,7 @@
              the preview flag refuses to load on any other JDK version, so enabling it here
              would make the build output un-runnable on the next release.
 
-             Needed by docs/26 (structured concurrency, still preview in 27) and docs/33.
+             Needed by docs/modernization/26 (structured concurrency, still preview in 27) and docs/modernization/33.
              Run it with:   mvn -Ppreview verify
              Requires a JDK whose feature version equals java.release. -->
         <profile>

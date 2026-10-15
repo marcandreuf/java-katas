@@ -12,8 +12,8 @@ import java.util.List;
  * The rewrite target is collections/RandomFileLines.java, which has four separate problems
  * stacked up -- a finally that throws NPE if the open failed, a catch that logs and rethrows,
  * an off-by-one that never picks the last line, and a capacity guess ArrayList does not need.
- * docs/09-streams-and-optional.md owns the off-by-one; this document owns the file handling
- * and the charset. See docs/18-files-strings-and-charsets.md.
+ * docs/modernization/09-streams-and-optional.md owns the off-by-one; this document owns the file handling
+ * and the charset. See docs/modernization/18-files-strings-and-charsets.md.
  *
  * TODO 1: readAll with Files.readString (Java 11). One line, no finally, no reader variable.
  *         Then look at RandomFileLines:48-60 and count what you deleted.

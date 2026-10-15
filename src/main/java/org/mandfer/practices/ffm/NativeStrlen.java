@@ -6,7 +6,7 @@ package org.mandfer.practices.ffm;
  * The Foreign Function and Memory API (JEP 454) went final in Java 22, replacing two things:
  * JNI, which needed a C compiler and a shared library per platform, and sun.misc.Unsafe, which
  * needed you to be wrong quietly. Nothing in this repo uses either, which is why this is new
- * code. See docs/23-foreign-function-and-memory.md.
+ * code. See docs/modernization/23-foreign-function-and-memory.md.
  *
  * NOTE: needs --release 22, and --enable-native-access to run without a warning.
  * See docs/env-setup.md.

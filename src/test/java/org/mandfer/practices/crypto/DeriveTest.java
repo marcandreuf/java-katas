@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Exercise: docs/32-crypto.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/32-crypto.md. Delete this line to begin.")
 class DeriveTest {
 
     private static final byte[] IKM = "input key material".getBytes(StandardCharsets.UTF_8);

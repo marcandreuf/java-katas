@@ -9,7 +9,7 @@ package org.mandfer.practices.modern;
  * a bad argument before the super constructor ran were a static helper wrapped around the
  * argument -- super(requireNonNegative(size)) -- or nothing.
  *
- * See docs/28-flexible-constructor-bodies.md. NOTE: needs --release 25.
+ * See docs/modernization/28-flexible-constructor-bodies.md. NOTE: needs --release 25.
  *
  * TODO 1: write NonNegative's constructor so it throws BEFORE calling super(size). The test
  *         proves the ordering by counting how many times the base constructor ran, so a

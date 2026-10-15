@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/27-module-imports-and-compact-sources.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/27-module-imports-and-compact-sources.md. Delete this line to begin.")
 class ModuleImportsTest {
 
     @Test
@@ -29,7 +29,7 @@ class ModuleImportsTest {
         assertEquals("", ModuleImports.joined(List.of()));
     }
 
-    /** Same comparator shape as docs/12 and docs/14. Third time; it should be automatic by now. */
+    /** Same comparator shape as docs/modernization/12 and docs/modernization/14. Third time; it should be automatic by now. */
     @Test
     void longest_first_drops_blanks_and_breaks_ties_alphabetically() {
         assertEquals(

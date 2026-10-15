@@ -8,7 +8,7 @@ import java.util.Map;
  * between them is the skill.
  *
  * The rewrite target in the old code is FindDups.java, which does this job with a TreeSet, an
- * anonymous Comparator and a for loop over args. See docs/14-map-defaults-and-collectors.md.
+ * anonymous Comparator and a for loop over args. See docs/modernization/14-map-defaults-and-collectors.md.
  *
  * TODO 1: tallyWithMerge  -- map.merge(word, 1, Integer::sum). The shortest correct counter in
  *         the language. Know what the second argument means when the key IS present.
@@ -22,7 +22,7 @@ import java.util.Map;
  *         arguments and THROWS on a duplicate key. The test asserts the throw. Then fix it
  *         with the three-argument form.
  * TODO 5: topWords -- the n most frequent, most frequent first, ties broken alphabetically
- *         ascending. Same reversed() placement trap as docs/12, now on Map.Entry.
+ *         ascending. Same reversed() placement trap as docs/modernization/12, now on Map.Entry.
  */
 public final class WordTally {
 

@@ -111,7 +111,7 @@ public class FairWorkloadTest {
 	}
 
 	@Test
-	@Disabled("Exercise: docs/09-streams-and-optional.md. Failing since 2014, cause never diagnosed. Find out why before changing anything.")
+	@Disabled("Exercise: docs/modernization/09-streams-and-optional.md. Failing since 2014, cause never diagnosed. Find out why before changing anything.")
 	public void testMaxNumPerSixWorkers(){
 		foldersPerCabinet = new int[]{ 950, 650, 250, 250, 350, 100, 650, 150, 150, 700 };
 		workers = 6;

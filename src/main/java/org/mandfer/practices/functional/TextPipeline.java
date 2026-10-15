@@ -10,7 +10,7 @@ import java.util.function.UnaryOperator;
  * Nothing in the old code composes functions, because nothing in the old code has a lambda in
  * it: one file in this repo contains a {@code ->} and this track added it. So this exercise is
  * new code. The rewrite targets for the same concept are named in
- * {@code docs/12-lambdas-and-method-references.md}.
+ * {@code docs/modernization/12-lambdas-and-method-references.md}.
  *
  * TODO 1: implement cleanAsStep() by chaining the four transforms below using Step.
  *         You will find you cannot, because Step has no andThen. Add one as a *default*

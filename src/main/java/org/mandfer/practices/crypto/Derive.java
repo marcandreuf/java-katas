@@ -8,7 +8,7 @@ import java.util.List;
  * between Java 21 and 25.
  *
  * Nothing in this repo does any cryptography, which is why this is new code. See
- * docs/32-crypto.md. NOTE: needs --release 25.
+ * docs/modernization/32-crypto.md. NOTE: needs --release 25.
  *
  * TODO 1: hkdf() -- KDF.getInstance("HKDF-SHA256") with HKDFParameterSpec.ofExtract()
  *         .addIKM(..).addSalt(..).thenExpand(info, length). Final in Java 25 (JEP 510).
@@ -21,7 +21,7 @@ import java.util.List;
  *         public key, newDecapsulator on the private one, and check both sides agree.
  *         Note what a KEM does NOT do: it does not encrypt your message. Write down what it
  *         gives you instead and what you still have to do with it.
- * TODO 4: tlsNamedGroups() -- what your JDK will actually negotiate. Then read docs/32 for
+ * TODO 4: tlsNamedGroups() -- what your JDK will actually negotiate. Then read docs/modernization/32 for
  *         why the answer changes in Java 27.
  */
 public final class Derive {

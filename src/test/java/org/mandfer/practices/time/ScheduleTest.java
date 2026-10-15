@@ -12,7 +12,7 @@ import java.time.ZonedDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/13-java-time.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/13-java-time.md. Delete this line to begin.")
 class ScheduleTest {
 
     private static final ZoneId MADRID = ZoneId.of("Europe/Madrid");

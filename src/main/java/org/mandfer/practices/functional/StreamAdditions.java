@@ -5,8 +5,8 @@ import java.util.Optional;
 
 /**
  * Everything added to Stream and Optional after Java 8, which is where most of the useful
- * parts now live. docs/09-streams-and-optional.md covers the Java 8 core; this is the
- * accretion from 9, 10, 12 and 16. See docs/17-stream-and-optional-additions.md.
+ * parts now live. docs/modernization/09-streams-and-optional.md covers the Java 8 core; this is the
+ * accretion from 9, 10, 12 and 16. See docs/modernization/17-stream-and-optional-additions.md.
  *
  * TODO 1: leadingBelow with takeWhile, allBelow with filter. They return different things for
  *         the same input and the test proves it. Being able to say which one you meant is the

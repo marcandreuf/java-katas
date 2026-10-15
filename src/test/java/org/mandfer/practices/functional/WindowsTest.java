@@ -7,7 +7,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/22-stream-gatherers.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/22-stream-gatherers.md. Delete this line to begin.")
 class WindowsTest {
 
     private static final List<Integer> VALUES = List.of(1, 2, 3, 4, 5, 6, 7);

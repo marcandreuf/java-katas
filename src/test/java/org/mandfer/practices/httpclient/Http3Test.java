@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Exercise: docs/29-http3-and-the-httpclient.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/29-http3-and-the-httpclient.md. Delete this line to begin.")
 class Http3Test {
 
     private HttpServer server;

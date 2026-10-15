@@ -7,7 +7,7 @@ import org.junit.jupiter.api.condition.OS;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/23-foreign-function-and-memory.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/23-foreign-function-and-memory.md. Delete this line to begin.")
 @EnabledOnOs({OS.LINUX, OS.MAC})
 class NativeStrlenTest {
 

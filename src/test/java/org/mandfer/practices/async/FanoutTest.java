@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Exercise: docs/15-completable-future.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/15-completable-future.md. Delete this line to begin.")
 class FanoutTest {
 
     private final ExecutorService pool = Executors.newFixedThreadPool(2);

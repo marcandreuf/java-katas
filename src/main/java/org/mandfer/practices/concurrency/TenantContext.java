@@ -6,14 +6,14 @@ import java.util.concurrent.Callable;
  * ScopedValue: the replacement for ThreadLocal that exists because virtual threads broke
  * ThreadLocal's cost model.
  *
- * docs/06-virtual-threads.md ends with the prompt "what happens to a ThreadLocal when there
+ * docs/modernization/06-virtual-threads.md ends with the prompt "what happens to a ThreadLocal when there
  * are a million threads?" -- this is the answer. A ThreadLocal is a mutable map entry per
  * thread, lives until it is removed, and is inherited by copying. At a million threads that
  * is a million map entries nobody clears. A ScopedValue is immutable, bound for the duration
  * of one call, and unbound automatically when that call returns.
  *
  * Final in Java 25 (JEP 506), after six releases of incubation and preview.
- * See docs/26-scoped-values-and-structured-concurrency.md.
+ * See docs/modernization/26-scoped-values-and-structured-concurrency.md.
  *
  * NOTE: needs --release 25.
  *

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/02-sealed-types.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/02-sealed-types.md. Delete this line to begin.")
 class ToolCallResultTest {
 
     @Test

@@ -7,7 +7,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/12-lambdas-and-method-references.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/12-lambdas-and-method-references.md. Delete this line to begin.")
 class TextPipelineTest {
 
     private static final String MESSY = "  The   QUICK\tbrown\nfox  ";

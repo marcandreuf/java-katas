@@ -8,7 +8,7 @@ import java.util.List;
  * The rewrite target is ArgsRandom.java:12 -- new ArrayList<String>(Arrays.asList(args)) --
  * which wraps an array in a fixed-size list and then copies it into a growable one, two
  * conversions to get back to where it started. The100DoorsCyberDojoTest:46 is the second.
- * See docs/16-collection-factories.md.
+ * See docs/modernization/16-collection-factories.md.
  *
  * TODO 1: defensiveCopy  -- the caller must not be able to change the result afterwards, even
  *         by mutating the list they handed in. One method call does this since Java 10.

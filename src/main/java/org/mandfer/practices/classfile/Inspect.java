@@ -11,7 +11,7 @@ import java.util.List;
  * broke on every new Java release until its ASM dependency caught up. This API is maintained
  * in lockstep with the class file format, so it cannot lag.
  *
- * See docs/24-class-file-api.md. NOTE: needs --release 24.
+ * See docs/modernization/24-class-file-api.md. NOTE: needs --release 24.
  *
  * TODO 1: bytesOf() -- read a class's own bytes back off the classpath. The resource name of
  *         a class is not its fully qualified name; work out what it is. Class.getResourceAsStream

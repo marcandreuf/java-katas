@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled("Exercise: docs/28-flexible-constructor-bodies.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/28-flexible-constructor-bodies.md. Delete this line to begin.")
 class ValidatedTest {
 
     @BeforeEach

@@ -17,11 +17,11 @@ import java.util.Optional;
  * network that permits TCP 443 and drops UDP 443 is the normal case rather than a rare one.
  *
  * These exercises run against LocalHttp.startEchoServer(), the same in-JVM
- * com.sun.net.httpserver instance docs/10 uses. That server speaks HTTP/1.1 and nothing else:
+ * com.sun.net.httpserver instance docs/modernization/10 uses. That server speaks HTTP/1.1 and nothing else:
  * the JDK ships no QUIC server, so there is no such thing as an offline HTTP/3 round trip
  * here. What you CAN test offline, and what matters in production, is the fallback.
  *
- * See docs/29-http3-and-the-httpclient.md. NOTE: needs --release 26.
+ * See docs/modernization/29-http3-and-the-httpclient.md. NOTE: needs --release 26.
  *
  * TODO 1: get() -- ask for HTTP/3 on the REQUEST, and return the body. It will succeed. Write
  *         down what it actually spoke before you look at TODO 2.
@@ -36,7 +36,7 @@ import java.util.Optional;
  *         why, and it is the error you would get in production from a firewall dropping UDP.
  * TODO 5: clientLevelNegotiatedVersion() -- set the version on the CLIENT builder instead of
  *         the request. It also falls back here, so the test looks the same. The difference is
- *         not visible offline and you have to know it: see the table in docs/29.
+ *         not visible offline and you have to know it: see the table in docs/modernization/29.
  */
 public final class Http3 {
 

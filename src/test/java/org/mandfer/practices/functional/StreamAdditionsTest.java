@@ -8,7 +8,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@Disabled("Exercise: docs/17-stream-and-optional-additions.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/17-stream-and-optional-additions.md. Delete this line to begin.")
 class StreamAdditionsTest {
 
     /** The 10 in the middle is the whole point of this fixture. */

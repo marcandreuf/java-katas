@@ -14,7 +14,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled("Exercise: docs/18-files-strings-and-charsets.md. Delete this line to begin.")
+@Disabled("Exercise: docs/modernization/18-files-strings-and-charsets.md. Delete this line to begin.")
 class TextFilesTest {
 
     /** U+2000 EN QUAD: whitespace to Unicode, invisible to trim(). */
