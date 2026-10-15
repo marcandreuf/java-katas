@@ -1,10 +1,23 @@
+# DEACTIVATED. The automatic triggers were removed on 2026-10-15 at the repo owner's request;
+# this workflow no longer runs on push or on pull requests.
+#
+# It is still here, and still valid, so it can be run by hand from the Actions tab
+# ("Run workflow") and so re-enabling it is a three-line change: put back
+#
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+#
+# under `on:` below.
+#
+# Before re-enabling, note that the matrix needs to agree with <java.release> in pom.xml,
+# which the release-ordered track raised from 21 to 25. A JDK older than that cannot build
+# this repo at all.
+
 name: build
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -13,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ '21', '25' ]
+        java: [ '25', '26', '27' ]
 
     name: JDK ${{ matrix.java }}
 
