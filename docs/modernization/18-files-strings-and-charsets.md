@@ -3,6 +3,9 @@
 **Java 11, 12, 18** · stage 7 of [the release-ordered track](INDEX.md) · `--release 21`, no build
 change
 
+> **No safety net:** `RandomFileLines` has no test. Write one first, in a separate commit,
+> asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the order matters.
+
 ## Where it lands
 
 **`collections/RandomFileLines.java:48-60`** is the richest single target in the repo and

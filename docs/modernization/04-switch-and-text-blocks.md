@@ -1,5 +1,9 @@
 # 04. Switch expressions and text blocks
 
+> **No safety net:** `DecimalToBinary`, `SimpleThreads` have no tests. Write them first, in a
+> separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the
+> order matters.
+
 ## Where it lands
 
 Switch material is thin in this repo, which is a finding rather than a gap: the old code reaches

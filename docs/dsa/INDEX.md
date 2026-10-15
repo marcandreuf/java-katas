@@ -19,6 +19,14 @@ that do are green while the code under them is wrong.
 So the convention is inverted. There, deleting `@Disabled` starts a modernization. Here, deleting
 `@Disabled` usually turns a green build red, and *that is the deliverable* — the fix comes after.
 
+**The two tracks write opposite kinds of test, and the difference matters.** This track writes the
+test the code *should* pass, so it goes red and stays red until the bug is fixed — `BinarySearch`
+is the example. The modernization track needs the other kind: a **characterization** test that
+asserts what the code does *today*, bugs and all, so that a refactor underneath it can be proved
+not to have changed anything. Writing the aspirational test before a refactor gives you a red
+build and no way to tell the refactor from the fix.
+[`../testing-first.md`](../testing-first.md) covers both and says which to reach for.
+
 ## The stages
 
 | # | Stage | Lands on | Code |

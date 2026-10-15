@@ -3,6 +3,10 @@
 **Java 8** · stage 1 of [the release-ordered track](INDEX.md) · compiles at `--release 21`, no
 build change
 
+> **No safety net:** `BadThreads`, `Consumer`, `FindDups`, `L3_Synchronization_Udemy`, `Order`,
+> `OrdersProcessingSystem`, `Producer` have no tests. Write them first, in a separate commit,
+> asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the order matters.
+
 ## What this stage is actually about
 
 Three words that people use interchangeably and should not:

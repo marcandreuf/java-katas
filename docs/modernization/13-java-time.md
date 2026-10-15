@@ -3,6 +3,10 @@
 **Java 8** · stage 2 of [the release-ordered track](INDEX.md) · compiles at `--release 21`, no
 build change
 
+> **No safety net:** `ForkBlur`, `RandomFileLines`, `SimpleThreads` have no tests. Write them
+> first, in a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how,
+> and why the order matters.
+
 ## Where it lands
 
     grep -rn --include='*.java' 'java.time' src     # nothing

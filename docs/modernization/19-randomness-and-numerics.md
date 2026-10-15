@@ -3,6 +3,10 @@
 **Java 17, 21** · stage 8 of [the release-ordered track](INDEX.md) · `--release 21`, no build
 change
 
+> **No safety net:** `Consumer`, `Producer`, `RandomFileLines`, `Safelock` have no tests. Write
+> them first, in a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says
+> how, and why the order matters.
+
 ## Where it lands
 
 Five `new Random()` sites, and one of them is a bug:

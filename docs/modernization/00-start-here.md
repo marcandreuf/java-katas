@@ -37,18 +37,29 @@ Never add a bare `@Disabled`. `FairWorkloadTest.testMaxNumPerSixWorkers` was swi
 with a note saying the cause was never found, and it stayed off for twelve years. That is the
 failure mode this convention exists to prevent.
 
+**But most of the old code has no test at all.** Twenty of the thirty-two classes that predate
+this track have never had one, and fifteen documents in this folder tell you to change one of
+them. There is no annotation to delete there and nothing to turn red — so the first commit is a
+test you write yourself, asserting what the code does *today*, bugs included.
+
+**[`../testing-first.md`](../testing-first.md) is that procedure**, with the coverage map showing
+which targets are bare and which of them cannot be tested as written. Read it before the first
+rewrite. Each affected document repeats the warning at the top, naming its own untested files.
+
 ## How the track works
 
 One document per concept in this folder, numbered. Each one names the files in this repo that
 carry the old idiom, says what to change and, more importantly, what to look for once you have
 changed it.
 
-**Two rules.**
+**Three rules.**
 
-1. **One concept per commit.** The diff is the deliverable. A commit that modernises records and
+1. **No test, no rewrite.** If the file you are about to change has no test, writing one is the
+   first commit — see above. A refactor nothing verifies is not a refactor.
+2. **One concept per commit.** The diff is the deliverable. A commit that modernises records and
    streams and concurrency at once is unreadable six months later, and unreadable diffs are the
    reason nobody can tell what they learned.
-2. **Every document ends with a "what got worse" section, and you fill it in.** Three honest lines
+3. **Every document ends with a "what got worse" section, and you fill it in.** Three honest lines
    about where a feature hurt is what produces an explanation that survives a follow-up question.
    "I tried it and it was not worth it here" is a better thing to be able to say than a list of
    features you can name.

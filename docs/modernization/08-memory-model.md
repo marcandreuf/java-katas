@@ -1,5 +1,9 @@
 # 08. The memory model
 
+> **No safety net:** `BadThreads`, `MyDeadlock`, `Safelock` have no tests. Write them first, in
+> a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the
+> order matters.
+
 ## Where it lands
 
 **`concurrency/BadThreads.java`** is the visibility demo from the Oracle tutorials, and the

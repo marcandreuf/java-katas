@@ -3,6 +3,9 @@
 **Java 8** · stage 3 of [the release-ordered track](INDEX.md) · compiles at `--release 21`, no
 build change
 
+> **No safety net:** `FindDups` has no test. Write one first, in a separate commit, asserting
+> what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the order matters.
+
 ## Where it lands
 
 **`collections/FindDups.java`** is the whole document in fourteen lines. It counts distinct words

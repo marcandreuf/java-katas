@@ -1,5 +1,9 @@
 # 06. Virtual threads
 
+> **No safety net:** `OrdersProcessingSystem`, `SimpleThreads` have no tests. Write them first,
+> in a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why
+> the order matters.
+
 ## Where it lands
 
 **`concurrency/SumWordsLength.java`** is the one to start with. It splits a string, submits one

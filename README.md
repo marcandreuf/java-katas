@@ -56,6 +56,11 @@ happen before anything else: the repo does not currently compile.
 
 **One concept per commit.** The diff is the deliverable.
 
+**No test, no rewrite.** Twenty of the thirty-two classes that predate the track have never had a
+test, and fifteen of the documents above tell you to change one of them. The first commit on those
+files is a test you write, asserting what the code does today — bugs included.
+[`docs/testing-first.md`](docs/testing-first.md) is the procedure and the coverage map.
+
 ## Reviewing the language, Java 8 to 27
 
 The table above is ordered by **concept**, smallest change first, which is the right order for

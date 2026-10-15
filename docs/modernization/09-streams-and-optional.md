@@ -1,5 +1,9 @@
 # 09. Stream and Optional additions since 8
 
+> **No safety net:** `FindDups`, `RandomFileLines` have no tests. Write them first, in a
+> separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the
+> order matters.
+
 ## Where it lands
 
 This is the richest seam in the repo. The code is from 2014 and predates the team habit of

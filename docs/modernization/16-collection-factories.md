@@ -2,6 +2,9 @@
 
 **Java 9, 10** · stage 5 of [the release-ordered track](INDEX.md) · `--release 21`, no build change
 
+> **No safety net:** `ArgsRandom` has no test. Write one first, in a separate commit, asserting
+> what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the order matters.
+
 ## Where it lands
 
 **`collections/ArgsRandom.java:12`** is the whole Java 9 argument in one line:

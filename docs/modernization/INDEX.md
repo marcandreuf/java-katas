@@ -9,6 +9,10 @@ landed, pointing at the document that teaches it.
 written after `11`, not because it comes last. Nothing was renumbered, because the `@Disabled`
 reasons in `src/test` name document filenames and renaming them silently breaks that link.
 
+**No test, no rewrite.** Fifteen of the stages below land on code that has never had a test. Each
+says so at the top; [`../testing-first.md`](../testing-first.md) is the procedure and the coverage
+map.
+
 **Java 27 is deliberately not covered yet.** It is four final JEPs, three of which are JVM
 defaults rather than anything you write, and they are noted in the rows below where they continue
 a story. See [the last section](#java-27-not-yet-covered).

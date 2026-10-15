@@ -1,5 +1,8 @@
 # 07. Classic concurrency
 
+> **No safety net:** `Drop`, `ForkBlur` have no tests. Write them first, in a separate commit,
+> asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the order matters.
+
 ## Where it lands
 
 **`concurrency/guardedLock/`** is a textbook `wait`/`notifyAll` guarded block: `Drop` holds a
