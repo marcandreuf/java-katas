@@ -53,6 +53,116 @@ a load-bearing shadow. See [the verdicts in full](#4-the-verdicts-in-full).
 
 ---
 
+# Review against current literature
+
+Added after a second pass against authoritative sources rather than this repo alone: the Oracle
+OCP Java SE 21 (1Z0-830) objectives, *Effective Java* 3rd edition, and the JEPs that own the
+behaviour. **The thesis above survived** — the contracts are the load-bearing part — but the first
+pass drew the contract boundary too narrowly. Six topics the literature treats as baseline were
+missing, and all six are verified below on JDK 26.
+
+## What was missing, and why it belongs
+
+### 1. Treeification is a security mitigation, and it needs `Comparable` keys
+
+The first pass verified *when* `HashMap` treeifies and never asked *why it exists*.
+**[JEP 180](https://openjdk.org/jeps/180)** is the answer: it mitigates hash-flooding denial of
+service (**CVE-2011-4858**), where crafted POST bodies collide every key into one bucket and turn a
+lookup into a linear scan. The JEP's own framing is improving the worst case "from O(n) to
+O(log n)" for "any key type that implements `Comparable`".
+
+That last clause is the load-bearing part, and it is measurable. Two keys, both with
+`hashCode() { return 42; }`, 20,000 put-then-get pairs, differing only in whether the key
+implements `Comparable`:
+
+| Key | Time |
+| --- | --- |
+| not `Comparable` | **2,735 ms** |
+| `Comparable` | **42 ms** |
+
+**65x, for implementing an interface that has nothing to do with hashing.** A tree bin needs an
+ordering to be a tree; without `compareTo` it falls back to a worse path. Nobody teaches this and
+it is a one-line fix on a key class.
+
+### 2. The `Comparable`/`Comparator` contract, as its own topic
+
+The first pass covered sort *stability* and not the *contract*, which is an explicit OCP objective
+and *Effective Java* Item 14. Three verified failure modes, none of which throws at test size:
+
+- **An intransitive comparator throws, but only above a size threshold.** Measured with a
+  comparator that never returns 0: silent at n=8, 16, 31, 32, 33; then
+  `IllegalArgumentException: Comparison method violates its general contract!` from n=63 upward.
+  Below about 32, TimSort uses binary insertion sort and never merges, so it never checks.
+  **Your unit test is under the threshold and production is over it.**
+- **`(x, y) -> x - y` overflows.** Sorting `[MIN_VALUE, MAX_VALUE, 0]` with it yields
+  `[0, 2147483647, -2147483648]` — wrong, silently. `Integer::compare` is correct. This is Item
+  14's explicit advice against relational operators in `compareTo`.
+- **`TreeMap` and `TreeSet` define equality by the comparator, not by `equals`.** With
+  `String.CASE_INSENSITIVE_ORDER`, putting `"Key"`, `"KEY"` and `"key"` leaves **size 1**; the same
+  three keys in a `HashMap` leave size 3. A `TreeSet` built that way answers `contains("KeY")` with
+  `true`. Item 14's "consistent with equals" advice is this bug.
+
+### 3. The null-handling contract matrix
+
+Not covered at all, and it is pure contract. Verified:
+
+| | null key | null value |
+| --- | --- | --- |
+| `HashMap`, `LinkedHashMap` | accepted | accepted |
+| `TreeMap` | **NPE** | accepted |
+| `ConcurrentHashMap` | **NPE** | **NPE** |
+| `Map.of` | **NPE** | **NPE** |
+| `HashSet` | accepted | — |
+| `TreeSet` | **NPE** | — |
+| `ArrayList` | accepted | — |
+| `ArrayDeque` | **NPE** | — |
+
+**`ArrayDeque` rejecting null is the one that catches people**, because it removes the option of a
+null sentinel and it is the collection the first pass correctly recommends over `LinkedList`.
+Swapping one for the other is not behaviour-preserving.
+
+### 4. Structures you assemble from the JDK rather than implement
+
+The first pass is right that implementing an LRU cache is interview-only, and then does not say
+what to do instead. The literature's answer is a small set of JDK assemblies, all verified:
+
+- **`LinkedHashMap` is an LRU cache** with `accessOrder=true` and an overridden
+  `removeEldestEntry`. Capacity 3, put a/b/c, `get("a")`, put d, and the contents are
+  `[c, a, d]`: `b` was evicted and `a` survived *because it was read*. A complete LRU in four lines.
+- **`EnumMap` is an ordinal-indexed array**, no hashing. Inserting `SHIP, PLAN, BUILD` iterates
+  `[PLAN, BUILD, SHIP]` — declaration order, guaranteed. The same keys in a `HashMap` iterate
+  `[BUILD, PLAN, SHIP]`, which is unspecified.
+- **`NavigableMap` range queries**: `floorKey(25)=20`, `ceilingKey(25)=30`,
+  `subMap(10,false,30,true)={20,30}`, `descendingKeySet()`. This is the answer to "which band does
+  this value fall into", which is otherwise written as a loop.
+- **`ArrayDeque` is the stack.** `java.util.Stack` extends `Vector` and is synchronised; the
+  `Deque` javadoc recommends `ArrayDeque` over it.
+
+### 5. `Comparable` consistency as a `HashMap` *performance* property
+
+Points 1 and 2 meet here, and neither source joins them up: the same `Comparable` interface Item 14
+wants for correctness is what JEP 180 needs for the 65x. One interface, two unrelated reasons, and
+a key class that omits it pays both.
+
+## What the literature confirmed
+
+- **Collection choice framed as *contracts*** — order guarantees, null policy, iteration
+  stability — **rather than as Big-O**, which is the first pass's central claim.
+- **Sequenced collections** (Java 21) are an OCP objective; modernization
+  [doc 10](../modernization/10-sequenced-collections-and-httpclient.md) already owns them.
+- **Nothing in the interview-only column was contradicted.** No authoritative Java source lists
+  segment trees, union-find or manual red-black rotations as developer baseline. They appear only
+  in interview-prep material, which is exactly the distinction this track draws.
+
+## What this changed
+
+The track grows from nine stages to **twelve**, and the numbering restarts at `01` because the DSA
+track now has its own folder. Three stages are new: the contract matrix, the
+`Comparable`/`Comparator` contracts, and the JDK-assembly stage. The nine-stage proposal below is
+kept as the record of the first pass; [`INDEX.md`](INDEX.md) is the track as built.
+
+---
+
 # Findings
 
 Everything below was run on **JDK 26.0.2.1 (Temurin)** against **`$JAVA_HOME/lib/src.zip`**, which
