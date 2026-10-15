@@ -125,4 +125,6 @@ the internet: the `HttpClient` one starts a server inside the test JVM.
 ## Licence
 
 MIT, except for eight files derived from the Oracle Java Tutorials which remain under Oracle's
-BSD-3 licence. See [`NOTICE`](NOTICE) for the list.
+BSD-3 licence. [`NOTICE`](NOTICE) summarises it; [`licenses/oracle-bsd-3.txt`](licenses/oracle-bsd-3.txt)
+holds the licence text and the list of files. Those eight carry a two-line pointer to it rather
+than an inline copy, which is what keeps the redistribution condition satisfied.

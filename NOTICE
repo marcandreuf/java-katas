@@ -8,20 +8,16 @@ exception of the files listed below.
 Oracle Java Tutorials sample code
 --------------------------------------------------------------------------
 
-The following files are derived from the Oracle Java Tutorials and remain
-under Oracle's 3-clause BSD licence. Each file carries the full notice in
-its own header, which is retained unchanged. They are included here as
-exercise material and have in some cases been modified.
+Eight files are derived from the Oracle Java Tutorials and remain under
+Oracle's 3-clause BSD licence. The full licence text, the list of the eight
+files and their copyright years are in:
 
-  src/main/java/org/mandfer/practices/collections/FindDups.java
-  src/main/java/org/mandfer/practices/concurrency/BadThreads.java
-  src/main/java/org/mandfer/practices/concurrency/Safelock.java
-  src/main/java/org/mandfer/practices/concurrency/forkjoin/ForkBlur.java
-  src/main/java/org/mandfer/practices/concurrency/guardedLock/Consumer.java
-  src/main/java/org/mandfer/practices/concurrency/guardedLock/Drop.java
-  src/main/java/org/mandfer/practices/concurrency/guardedLock/Producer.java
-  src/main/java/org/mandfer/practices/concurrency/guardedLock/ProducerConsumerExample.java
+  licenses/oracle-bsd-3.txt
 
-  Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+Each of those files carries a two-line pointer to it. The licence requires
+that the notice, conditions and disclaimer travel with the source, so that
+file must not be deleted and the pointers must not be removed.
+
+All eight have been modified; they are included here as exercise material.
 
 Everything else in src/ is original work under the MIT License.

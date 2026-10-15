@@ -76,6 +76,11 @@ the real bugs are and you want the rest quiet by then.
 ## A note on whose code this is
 
 Eight files in `concurrency/` and `collections/` are Oracle Java Tutorials code under a BSD-3
-header, listed in `NOTICE`. They are worth modernising, but when you are asked what you wrote,
-they are not it. Your own code is the `algorithm` package, `CircularList`, `MyArrayList`,
-`FairWorkLoad`, `SumWordsLength` and `OrdersProcessingSystem`.
+licence. Each carries a two-line pointer to `licenses/oracle-bsd-3.txt`, which lists all eight and
+holds the licence text once instead of thirty lines in every file. The licence requires the notice
+to travel with the source, so that file stays and the pointers stay — including in the commits
+where you rewrite the code underneath them.
+
+They are worth modernising, but when you are asked what you wrote, they are not it. Your own code
+is the `algorithm` package, `CircularList`, `MyArrayList`, `FairWorkLoad`, `SumWordsLength` and
+`OrdersProcessingSystem`.
