@@ -28,16 +28,16 @@ So the convention is inverted. There, deleting `@Disabled` starts a modernizatio
 | 03 | [`equals`, `hashCode`, and the 65x `Comparable` surprise](03-equals-and-hashcode.md) | new | yes |
 | 04 | [`Comparable` and `Comparator` contracts](04-ordering-contracts.md) | `SumSearch` | yes |
 | 05 | [Binary search: the contract, and the bug in this repo](05-binary-search.md) | **`BinarySearch.java`** | yes |
-| 06 | Binary search over an answer space | `FairWorkLoad` | planned |
-| 07 | Accidental quadratics, and where the crossover actually is | `ProductsOfArrayElements`, new | planned |
-| 08 | Recursion depth, and the exponential nobody measured | `StringRecursiveReversal`, `PascalsTriangleRecursive` | planned |
-| 09 | Integer overflow is an algorithm bug | `NumberReverse`, `DuplicateNumber` | planned |
-| 10 | Structures you assemble from the JDK, not from scratch | new | planned |
-| 11 | Reachability, not Dijkstra | `mousemaze/` (greenfield, has a spec) | planned |
-| 12 | What we are deliberately not teaching | paper | planned |
+| 06 | [Binary search over an answer space](06-answer-space-search.md) | `FairWorkLoad` | yes |
+| 07 | [Accidental quadratics, and the real crossover](07-accidental-quadratics.md) | `ProductsOfArrayElements` | yes |
+| 08 | [Recursion depth, and the exponential nobody measured](08-recursion-depth.md) | `StringRecursiveReversal`, `PascalsTriangleRecursive` | yes |
+| 09 | [Integer overflow is an algorithm bug](09-integer-overflow.md) | `NumberReverse`, `DuplicateNumber` | yes |
+| 10 | [Structures you assemble from the JDK](10-jdk-assemblies.md) | new | yes |
+| 11 | [Reachability, not Dijkstra](11-reachability.md) | `mousemaze/` (greenfield, has a spec) | yes |
+| 12 | [What we are deliberately not teaching](12-not-teaching.md) | paper | written answers |
 
-Stages 01–05 are written. **Read them in order**: 02, 03 and 04 are one argument in three parts,
-and 05 is where it lands on code somebody already shipped.
+**All twelve are written.** Read them in order: 02, 03 and 04 are one argument in three parts, 05
+is where it lands on code somebody already shipped, and 12 is the stage to disagree with.
 
 ## Reuse, which is most of the point
 

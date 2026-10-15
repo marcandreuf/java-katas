@@ -5,7 +5,7 @@ One folder per learning track, plus the setup notes that are shared between them
 | | |
 | --- | --- |
 | [`modernization/`](modernization/) | **The modernization track.** Takes the 2014–2021 code in this repo from the idiom it was written in to the current one, and reviews the language from Java 8 to 26. Two orderings over the same 35 documents: [`00-start-here.md`](modernization/00-start-here.md) begins the concept order, [`INDEX.md`](modernization/INDEX.md) is the release order. |
-| [`dsa/`](dsa/) | **The data structures and algorithms track.** Twelve stages; 01–05 written. [`INDEX.md`](dsa/INDEX.md) is the spine, [`research.md`](dsa/research.md) the findings it rests on — including a review against the OCP objectives and *Effective Java*. The thesis: almost none of the algorithms are load-bearing, almost all of the contracts are. |
+| [`dsa/`](dsa/) | **The data structures and algorithms track.** Twelve stages, all written. [`INDEX.md`](dsa/INDEX.md) is the spine, [`research.md`](dsa/research.md) the findings it rests on — including a review against the OCP objectives and *Effective Java*. The thesis: almost none of the algorithms are load-bearing, almost all of the contracts are. |
 | [`env-setup.md`](env-setup.md) | Shared. What a machine needs to build this repo, and the commands to get there. Not part of either track. |
 
 ## Why the source tree is not organised this way
