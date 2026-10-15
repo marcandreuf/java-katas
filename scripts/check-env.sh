@@ -5,13 +5,18 @@ set -uo pipefail
 ok=0
 say () { printf '%-28s %s\n' "$1" "$2"; }
 
+# Must match <java.release> in pom.xml: a JDK can target an older release but never a newer one.
+required=$(sed -n 's|.*<java.release>\([0-9]*\)</java.release>.*|\1|p' \
+    "$(dirname "$0")/../pom.xml" | head -1)
+required=${required:-26}
+
 if command -v java >/dev/null 2>&1; then
     ver=$(java -version 2>&1 | head -1)
     major=$(java -version 2>&1 | head -1 | sed -E 's/.*"([0-9]+).*/\1/')
-    if [[ "$major" =~ ^[0-9]+$ ]] && (( major >= 21 )); then
+    if [[ "$major" =~ ^[0-9]+$ ]] && (( major >= required )); then
         say "JDK" "ok, $ver"
     else
-        say "JDK" "TOO OLD, $ver (need 21 or newer)"; ok=1
+        say "JDK" "TOO OLD, $ver (need $required or newer)"; ok=1
     fi
 else
     say "JDK" "MISSING"; ok=1

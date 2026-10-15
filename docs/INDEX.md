@@ -230,7 +230,7 @@ this track added it. Java 8 is not revision here, it is new ground.
 | **Applet API removed** | 504 | **[doc 30](30-upgrade-hazards.md)** |
 | AOT object caching with any GC | 516 | **[doc 31](31-runtime-defaults.md)** |
 | G1 throughput via reduced synchronization | 522 | **[doc 31](31-runtime-defaults.md)** |
-| Structured concurrency (6th preview) | 525 | **[doc 26](26-scoped-values-and-structured-concurrency.md)** |
+| Structured concurrency (6th preview) | 525 | **[doc 26](26-scoped-values-and-structured-concurrency.md)** — the `Joiner` API changed again |
 | Lazy Constants (2nd preview, renamed) | 526 | **[doc 33](33-preview-shelf.md)** |
 | PEM encodings (2nd preview) | 524 | [doc 33](33-preview-shelf.md) |
 | Primitive types in patterns (4th preview) | 530 | [doc 21](21-unnamed-and-primitive-patterns.md) |
@@ -274,11 +274,11 @@ this track added it. Java 8 is not revision here, it is new ground.
 
 | Stages | `--release` | Notes |
 | --- | --- | --- |
-| 1–9 | 21 | All of it compiles at the original floor. No build change needed. |
-| 10–17, 21 | 22–25 | `<java.release>` is now **25**, which covers all of these. |
-| 18 | 26 | **Not compiled.** Needs a 26+ JDK; the code is in the document. |
-| 15, 22 | 25 + preview | `mvn -Ppreview verify`. Never enable preview by default. |
-| 12 | 25 + native access | Surefire already passes the flag; [doc 23](23-foreign-function-and-memory.md) says why. |
+| 1–9 | 21 | All of it compiles at the original floor. |
+| 10–17, 21 | 22–25 | Covered by the current setting. |
+| 18 | 26 | HTTP/3. `<java.release>` is now **26**, so this is a compiled exercise. |
+| 15, 22 | 26 + preview | `mvn -Ppreview verify`. Never enable preview by default. |
+| 12 | 26 + native access | Surefire already passes the flag; [doc 23](23-foreign-function-and-memory.md) says why. |
 
 [`env-setup.md`](env-setup.md) has the commands, including installing JDK 27 alongside 25.
 

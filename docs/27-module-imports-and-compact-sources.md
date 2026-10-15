@@ -1,6 +1,6 @@
 # 27. Module imports, compact source files, instance `main`
 
-**Java 25** · stage 16 of [the release-ordered track](INDEX.md) · **needs `--release 25`**
+**Java 25** · stage 16 of [the release-ordered track](INDEX.md) · **needs `--release 25` or newer**
 
 ## Where it lands
 

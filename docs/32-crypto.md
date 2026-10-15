@@ -1,6 +1,6 @@
 # 32. Crypto: key derivation, post-quantum, PEM
 
-**Java 21 → 26** · stage 21 of [the release-ordered track](INDEX.md) · **needs `--release 25`**
+**Java 21 → 26** · stage 21 of [the release-ordered track](INDEX.md) · **needs `--release 25` or newer**
 
 ## Where it lands
 

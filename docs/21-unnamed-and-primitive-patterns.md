@@ -1,7 +1,7 @@
 # 21. Unnamed variables and patterns, and primitive patterns
 
 **Java 22** (unnamed) · **preview through 26** (primitive) · stage 10 of
-[the release-ordered track](INDEX.md) · **needs `--release 22`+**, and `<java.release>` is now 25
+[the release-ordered track](INDEX.md) · **needs `--release 22` or newer**; `<java.release>` is 26
 
 ## Where it lands
 

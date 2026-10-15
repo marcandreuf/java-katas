@@ -1,6 +1,6 @@
 # 23. Foreign function and memory
 
-**Java 22** · stage 12 of [the release-ordered track](INDEX.md) · **needs `--release 22`**, and a
+**Java 22** · stage 12 of [the release-ordered track](INDEX.md) · **needs `--release 22` or newer**, and a
 native-access flag to run quietly
 
 ## Where it lands

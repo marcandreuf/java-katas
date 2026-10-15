@@ -88,10 +88,14 @@ together with the fix, so the diff shows the debt being taken on and paid in the
 **No bare `@Disabled`.** A skip without a reason is how `FairWorkloadTest` stayed switched off from
 2014 to 2026.
 
-**Targets Java 25.** It was 21 — the floor virtual threads, sequenced collections and record
+**Targets Java 26.** It was 21 — the floor virtual threads, sequenced collections and record
 patterns need — and the release-ordered track raised it: 22 for the FFM API and unnamed patterns,
 24 for stream gatherers and the class-file API, 25 for scoped values, module imports and flexible
-constructor bodies. Docs 00–11 and stages 1–9 still only need 21. CI builds on 25 and 27.
+constructor bodies, 26 for HTTP/3 in the HttpClient. Docs 00–11 and stages 1–9 still only
+need 21.
+
+The GitHub Actions workflow is **deactivated**: it runs only on manual dispatch. The header of
+`.github/workflows/build.yml` says how to switch it back on.
 
 Preview features are off by default and should stay that way — a class compiled with the preview
 flag refuses to load on any other JDK version. Two stages need them:

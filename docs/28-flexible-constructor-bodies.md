@@ -1,6 +1,6 @@
 # 28. Flexible constructor bodies
 
-**Java 25** · stage 17 of [the release-ordered track](INDEX.md) · **needs `--release 25`**
+**Java 25** · stage 17 of [the release-ordered track](INDEX.md) · **needs `--release 25` or newer**
 
 ## Where it lands
 

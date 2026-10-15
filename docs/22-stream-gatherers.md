@@ -1,6 +1,6 @@
 # 22. Stream gatherers
 
-**Java 24** · stage 11 of [the release-ordered track](INDEX.md) · **needs `--release 24`**
+**Java 24** · stage 11 of [the release-ordered track](INDEX.md) · **needs `--release 24` or newer**
 
 ## Where it lands
 

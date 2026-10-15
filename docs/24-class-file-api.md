@@ -1,6 +1,6 @@
 # 24. The Class-File API
 
-**Java 24** · stage 13 of [the release-ordered track](INDEX.md) · **needs `--release 24`**
+**Java 24** · stage 13 of [the release-ordered track](INDEX.md) · **needs `--release 24` or newer**
 
 ## Where it lands
 
@@ -52,8 +52,8 @@ This is the table behind the most-seen error message in Java:
 
 **69 means someone compiled on 25 and ran on 21.** Being able to decode that on sight, without
 looking it up, is worth more day to day than the rest of this document. The test asserts
-`>= 65` rather than an exact number, because the number now tracks `<java.release>` — which is 25
-in this repo as of this stage.
+`>= 65` rather than an exact number, because the number now tracks `<java.release>` — which is 26
+in this repo, so the test sees 70.
 
 **TODO 3** has a small surprise in it. `Door.class` reports four methods:
 

@@ -7,18 +7,21 @@ VM wants a password.
 
 ## What was missing
 
-Checked 2026-10-15, before this document existed:
+Checked 2026-10-15, before this document existed, and where it stands now:
 
-| | State |
-| --- | --- |
-| JDK | Temurin 25.0.4, via SDKMAN — fine |
-| Maven | **not installed** (`mvn: command not found`) |
-| `~/.m2` | **does not exist** |
-| JDK 27 | not installed |
-| Network to Maven Central | reachable (HTTP 200) |
+| | State then | State now |
+| --- | --- | --- |
+| JDK | Temurin 25.0.4 | **Temurin 26.0.2.1**, the default |
+| Maven | **not installed** (`mvn: command not found`) | 3.9.16, via SDKMAN |
+| `~/.m2` | **did not exist** | warm |
+| Network to Maven Central | reachable (HTTP 200) | reachable |
 
-So `mvn verify` from the README could not run at all, and `scripts/check-env.sh` would have told
-you so: `Maven MISSING`, `Maven cache COLD`.
+So `mvn verify` from the README could not run at all, and `scripts/check-env.sh` would have said
+so: `Maven MISSING`, `Maven cache COLD`. **Both are fixed.** The steps below are kept because
+they are what a new machine needs.
+
+`check-env.sh` now reads the required JDK out of `<java.release>` in `pom.xml` rather than
+hard-coding 21, so it fails on a JDK that cannot build the repo instead of passing it.
 
 ## 1. Install Maven
 
@@ -55,30 +58,36 @@ You want `JDK ok`, `Maven ok`, `Maven cache warm`.
 > The README still spells these `./check-env.sh` and `./warm-cache.sh`. They moved to `scripts/`
 > in commit `9b22a9c` and the README was not updated with them.
 
-## 3. Install JDK 27 alongside 25
+## 3. The JDK
+
+`<java.release>` in `pom.xml` is **26**, so you need a JDK of **26 or newer** to build this at
+all. A JDK compiles for any older `--release` and never a newer one.
+
+    sdk install java 26.0.2+1.1-tem
+    sdk default java 26.0.2+1.1-tem
+    sdk current java
+
+Stage 18 (HTTP/3, JEP 517) is the one that needs 26 specifically; everything before it would
+build on 25.
+
+### Looking further ahead
+
+Java 27 shipped in September 2026 and this track does not cover it yet. To try the rows in
+[`INDEX.md`](INDEX.md) that mention it — compact object headers on by default, post-quantum
+TLS — install it as a second JDK:
 
     sdk install java 27.0.0.0+35-tem
 
-Temurin 27 is the LTS-track build matching the `temurin` distribution CI already uses. Installing a
-second JDK does **not** change your default — SDKMAN only switches the first one it installs for a
-candidate. Verify:
-
-    sdk current java        # still 25.0.4-tem
-
-### Switching between them
+Installing a second JDK does **not** change your default; SDKMAN only switches the first one it
+installs for a candidate. Then:
 
     sdk use java 27.0.0.0+35-tem     # this shell only, until you close it
-    sdk use java 25.0.4-tem          # back
+    sdk use java 26.0.2+1.1-tem      # back
 
     sdk default java 27.0.0.0+35-tem # every new shell, permanently
 
-**Use `sdk use`, not `sdk default`, while working through this track.** `java.release` in `pom.xml`
-is 21 and most of the track targets that. You want 27 for one exercise at a time, in one shell,
-not as the thing every build silently gets.
-
-To check which one a shell is actually holding:
-
-    java -version && echo "JAVA_HOME=$JAVA_HOME"
+**Use `sdk use`, not `sdk default`, for that.** You want the newer JDK for one experiment at a
+time, in one shell, not as the thing every build silently gets.
 
 ## 4. Working offline
 
@@ -94,9 +103,11 @@ a degraded one.
 
 | Stages | JDK | Why |
 | --- | --- | --- |
-| Java 8 → 21 material | 25 (default) | All of it compiles at `--release 21`. No pom change. |
-| Java 22 → 27 finalised features | 27 | `--release` has to be raised; see `docs/INDEX.md`. |
-| Preview features | 27 + `--enable-preview` | Structured concurrency, lazy constants, primitive patterns. Not wired into `pom.xml` yet. |
+| Java 8 → 21 material | any 26+ | All of it compiles at `--release 21`. |
+| Java 22 → 26 finalised features | **26** | What `<java.release>` is set to. HTTP/3 (stage 18) is the one that needs 26 specifically. |
+| Preview features | 26 + the preview flag | `mvn -Ppreview verify`. The profile follows the active JDK, so it works without editing the pom. |
 
-A JDK can always compile for an **older** `--release` but never a newer one, which is why 27 is the
-one to install and 21 stays the floor.
+A JDK can always compile for an **older** `--release` but never a newer one, which is why the
+JDK you run has to be at least `<java.release>`.
+
+
