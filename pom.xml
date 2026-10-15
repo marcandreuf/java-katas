@@ -12,12 +12,12 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Raised from 21 to 25 for the release-ordered track (docs/INDEX.md), which needs:
+        <!-- Raised from 21 to 26 for the release-ordered track (docs/INDEX.md), which needs:
              22 for the FFM API and unnamed patterns, 24 for stream gatherers and the
              class-file API, 25 for scoped values, module imports and flexible constructor
-             bodies. The original concept track (docs 00 to 11) and stages 1 to 9 still only
-             need 21. CI builds on 25 and 27. -->
-        <java.release>25</java.release>
+             bodies, 26 for HTTP/3 in the HttpClient. The original concept track (docs 00 to
+             11) and stages 1 to 9 still only need 21. -->
+        <java.release>26</java.release>
 
         <junit.version>5.10.2</junit.version>
         <hamcrest.version>2.2</hamcrest.version>
@@ -147,8 +147,9 @@
             <properties>
                 <!-- Preview features compile only when the release EQUALS the running JDK's
                      feature version, so this profile follows whichever JDK is active instead
-                     of the pinned 25. Without it, JDK 26 plus release 25 fails at compile
-                     time with "invalid source release 25" when the preview flag is set. -->
+                     of the pinned release. It is a no-op while the two already agree, and
+                     it is what stops a newer default JDK failing at compile time with
+                     "invalid source release" when the preview flag is set. -->
                 <java.release>${java.specification.version}</java.release>
             </properties>
             <build>
