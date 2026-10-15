@@ -71,6 +71,16 @@ defaults, and the index says where each one continues a story already here.
 Setting up a machine to build this, including a second JDK for the post-21 material, is
 [`docs/env-setup.md`](docs/env-setup.md). **Maven is not assumed to be installed.**
 
+## A second track: data structures and algorithms
+
+[`docs/dsa/`](docs/dsa/) is a separate track with its own index, arguing that **almost none of the
+algorithms are load-bearing and almost all of the contracts are.** It does not rewrite old code;
+it writes the test that was never there, and most of the time that test fails. Twelve stages,
+01–05 written.
+
+The sharpest example is already in this repo: `algorithm/BinarySearch.java` cannot find five of the
+twelve elements in its own test fixture, and its eight tests are green.
+
 ## Running it
 
     ./scripts/check-env.sh              # JDK present? cache warm?

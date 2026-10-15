@@ -1,0 +1,75 @@
+# DSA track: the contracts, not the algorithms
+
+**Twelve stages.** The thesis, argued at length in [`research.md`](research.md) and tested against
+the OCP objectives and *Effective Java*: **almost none of the algorithms are load-bearing, and
+almost all of the contracts are.** Nobody shipping Java implements a hash table or a shortest-path
+search. What ships, repeatedly and wrongly, is a `contains` inside a loop, a `binarySearch` on
+unsorted input, a key whose `hashCode` disagrees with its `equals`, a comparator that overflows,
+and a recursion whose depth is the size of the input.
+
+Every one of those is a contract failure. **Most of them are in this repo right now.**
+
+## How this track differs from the modernization one
+
+[The modernization track](../modernization/INDEX.md) rewrites old code into current idiom. This one
+does not rewrite anything: it **writes the test that was never there**, and most of the time the
+test fails. Seven of the twelve DSA files in this repo have no test at all, and two of the ones
+that do are green while the code under them is wrong.
+
+So the convention is inverted. There, deleting `@Disabled` starts a modernization. Here, deleting
+`@Disabled` usually turns a green build red, and *that is the deliverable* — the fix comes after.
+
+## The stages
+
+| # | Stage | Lands on | Code |
+| --- | --- | --- | --- |
+| 01 | [Which collection, and what it costs](01-which-collection.md) | `CircularList`, `MyArrayList`, measurement | runnable, no tests |
+| 02 | [The contract matrix: nulls, order, and refusals](02-contract-matrix.md) | new | yes |
+| 03 | [`equals`, `hashCode`, and the 65x `Comparable` surprise](03-equals-and-hashcode.md) | new | yes |
+| 04 | [`Comparable` and `Comparator` contracts](04-ordering-contracts.md) | `SumSearch` | yes |
+| 05 | [Binary search: the contract, and the bug in this repo](05-binary-search.md) | **`BinarySearch.java`** | yes |
+| 06 | Binary search over an answer space | `FairWorkLoad` | planned |
+| 07 | Accidental quadratics, and where the crossover actually is | `ProductsOfArrayElements`, new | planned |
+| 08 | Recursion depth, and the exponential nobody measured | `StringRecursiveReversal`, `PascalsTriangleRecursive` | planned |
+| 09 | Integer overflow is an algorithm bug | `NumberReverse`, `DuplicateNumber` | planned |
+| 10 | Structures you assemble from the JDK, not from scratch | new | planned |
+| 11 | Reachability, not Dijkstra | `mousemaze/` (greenfield, has a spec) | planned |
+| 12 | What we are deliberately not teaching | paper | planned |
+
+Stages 01–05 are written. **Read them in order**: 02, 03 and 04 are one argument in three parts,
+and 05 is where it lands on code somebody already shipped.
+
+## Reuse, which is most of the point
+
+This track adds four new exercise classes. Everything else lands on code that has been in the repo
+since 2014:
+
+| Existing file | Stage | What it is for |
+| --- | --- | --- |
+| `algorithm/BinarySearch.java` | **05** | Broken and green. Misses 5 of 12 elements in its own fixture. |
+| `algorithm/FairWorkLoad.java` | 06 | Genuinely binary search over an answer space. Its `max()` is also wrong. |
+| `algorithm/NumberReverse.java` | 09 | Silent overflow, no test. |
+| `algorithm/DuplicateNumber.java` | 09 | Overflow in a sum, no test. |
+| `algorithm/StringRecursiveReversal.java` | 08 | Recursion depth is the input length. |
+| `algorithm/PascalsTriangleRecursive.java` | 08 | Exponential, and the honest fix is "do nothing". |
+| `algorithm/SumSearch.java` | 04 | Sorts the caller's array. Undocumented mutation. |
+| `CircularList.java`, `algorithm/MyArrayList.java` | 01 | Hand-rolled structures. The lesson is "don't". |
+| `mousemaze/` | 11 | Only `Rules.txt` and two test files with zero `@Test` methods. |
+| `ProductsOfArrayElementsTest` | 07 | O(n²) by construction. |
+
+Named as toys and given no stage: `FindMiddleIndex`, `PascalsTriangle`,
+`RotateMatrix90DegreeInPlace`. Stage 12 says why.
+
+Owned by the other track, cross-referenced rather than duplicated: `DecimalToBinary` (prints hex —
+[doc 03](../modernization/03-pattern-matching.md)), `MyArrayList` and `CircularList` as rewrites
+([doc 10](../modernization/10-sequenced-collections-and-httpclient.md)), view semantics
+([doc 16](../modernization/16-collection-factories.md)), and measurement discipline
+([doc 34](../modernization/34-measuring-it-properly.md)).
+
+## The two rules, same as the other track
+
+1. **One concept per commit.** The diff is the deliverable.
+2. **Every stage ends with "What got worse", and you fill it in.** Twelve stages of contracts you
+   can recite is worth less than three you have been burned by.
+
+Needs JDK 26, same as the rest of the repo. See [`../env-setup.md`](../env-setup.md).
