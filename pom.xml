@@ -116,6 +116,15 @@
                                 <requireMavenVersion>
                                     <version>3.6.3</version>
                                 </requireMavenVersion>
+                                <!-- A JDK can target an older release but never a newer one, so
+                                     the running JDK has to be at least java.release. Without
+                                     this rule the build gets as far as javac and fails with
+                                     "release version 26 not supported", which names neither the
+                                     required version nor what you are running. -->
+                                <requireJavaVersion>
+                                    <version>[${java.release},)</version>
+                                    <message>This repo compiles at --release ${java.release}, so it needs a JDK of ${java.release} or newer. Run ./scripts/check-env.sh, then "sdk install java 26.0.2+1.1-tem" and "sdk default java 26.0.2+1.1-tem". See docs/env-setup.md.</message>
+                                </requireJavaVersion>
                             </rules>
                         </configuration>
                     </execution>

@@ -89,6 +89,35 @@ installs for a candidate. Then:
 **Use `sdk use`, not `sdk default`, for that.** You want the newer JDK for one experiment at a
 time, in one shell, not as the thing every build silently gets.
 
+### When the build says the release is not supported
+
+    [ERROR] Fatal error compiling: error: release version 26 not supported
+
+That is **Maven running on a JDK older than 26**, which cannot compile for a release newer than
+itself. It is reported by `javac`, which is why it names neither the JDK you have nor the one you
+need.
+
+The enforcer now catches it first and says so instead:
+
+    [ERROR] Rule 1: ...RequireJavaVersion failed with message:
+    [ERROR] This repo compiles at --release 26, so it needs a JDK of 26 or newer. ...
+
+Maven does not necessarily use the JDK on your `PATH` — it uses `JAVA_HOME`. Check which one it
+actually has:
+
+    mvn -v                  # the last line is the JDK Maven is using
+    echo "$JAVA_HOME"
+    java -version           # may differ from the above
+
+Then fix whichever is wrong:
+
+    sdk install java 26.0.2+1.1-tem
+    sdk default java 26.0.2+1.1-tem
+    ./scripts/check-env.sh
+
+`check-env.sh` reads the required version out of `<java.release>` in `pom.xml`, so it answers this
+question before a build does.
+
 ## 4. Working offline
 
 Once step 2 has run while online:
