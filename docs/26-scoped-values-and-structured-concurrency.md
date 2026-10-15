@@ -1,7 +1,7 @@
 # 26. Scoped values, and structured concurrency as it is now spelled
 
 **Java 25** (scoped values, final) · **preview through 26** (structured concurrency) · stage 15 of
-[the release-ordered track](INDEX.md) · **needs `--release 25`**
+[the release-ordered track](INDEX.md) · **needs `--release 25` or newer**
 
 ## Where it lands
 
@@ -56,7 +56,7 @@ Now the same thing through a `StructuredTaskScope`:
         try (var scope = StructuredTaskScope.open(Joiner.<String>allSuccessfulOrThrow())) {
             scope.fork(TenantContext::current);
             scope.fork(TenantContext::current);
-            return scope.join().map(Subtask::get).toList();     // [acme, acme]
+            return scope.join();                               // [acme, acme]
         }
     });
 
@@ -87,22 +87,44 @@ shape — it is a bigger change than "renamed":
         return combine(a.get(), b.get());
     }
 
-    // JDK 25, 26 and 27: a static factory and a Joiner, no subclassing, join() returns the result
+    // JDK 25: a static factory and a Joiner, no subclassing, but join() hands back subtasks
     try (var scope = StructuredTaskScope.open(Joiner.<String>allSuccessfulOrThrow())) {
         scope.fork(this::fetchA);
         scope.fork(this::fetchB);
-        return scope.join().map(Subtask::get).toList();
+        return scope.join().map(Subtask::get).toList();      // Stream<Subtask<String>>
+    }
+
+    // JDK 26: same shape, and join() now hands back the VALUES
+    try (var scope = StructuredTaskScope.open(Joiner.<String>allSuccessfulOrThrow())) {
+        scope.fork(this::fetchA);
+        scope.fork(this::fetchB);
+        return scope.join();                                 // List<String>
     }
 
 The policy moved from a **subclass** to a **`Joiner` parameter**, which is the better design and
-breaks every example on the internet. The four to know, all verified here:
+breaks every example on the internet. The five to know, all verified on JDK 26:
 
-| Joiner | Behaviour |
-| --- | --- |
-| `allSuccessfulOrThrow()` | all must succeed; `join()` returns a stream of subtasks |
-| `anySuccessfulResultOrThrow()` | first success wins, rest cancelled; `join()` returns the value |
-| `awaitAll()` | waits for everything; you inspect `subtask.state()` yourself |
-| `allUntil(predicate)` | your own stopping rule |
+| Joiner (JDK 26) | `join()` returns | Behaviour |
+| --- | --- | --- |
+| `allSuccessfulOrThrow()` | `List<T>` | all must succeed; you get the values |
+| `anySuccessfulOrThrow()` | `T` | first success wins, rest cancelled |
+| `awaitAllSuccessfulOrThrow()` | `Void` | all must succeed, results ignored |
+| `awaitAll()` | `Void` | waits for everything; you inspect `subtask.state()` yourself |
+| `allUntil(predicate)` | `List<Subtask<T>>` | your own stopping rule |
+
+**That table is for JDK 26 and it is not the JDK 25 table.** Verified on both:
+`allSuccessfulOrThrow()` changed from handing back a `Stream<Subtask<T>>` to handing back a
+`List<T>`, `anySuccessfulResultOrThrow()` was **renamed** to `anySuccessfulOrThrow()`, and
+`awaitAllSuccessfulOrThrow()` is new. So the JDK 25 code above does not compile on 26:
+
+    error: cannot find symbol
+        return scope.join().map(StructuredTaskScope.Subtask::get).toList();
+                           ^
+
+**This is the point of the document happening to you while you read it.** Doc 06 warned that the
+JDK 21 `ShutdownOnFailure` shape was gone by 25; the 25 shape is now gone by 26. Each change has
+been a simplification — subclass to parameter, subtasks to values — and each one invalidates
+every example written against the version before it.
 
 A failure surfaces as `StructuredTaskScope.FailedException` with the original as its cause —
 *not* `ExecutionException` or `CompletionException`, so that is a **third** wrapper type to add to
