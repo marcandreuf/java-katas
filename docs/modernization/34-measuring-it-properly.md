@@ -15,7 +15,7 @@ Five earlier stages ask you to make a performance claim:
 | [22](22-stream-gatherers.md) | whether `windowSliding` beats an index loop |
 | [31](31-runtime-defaults.md) | four collectors, same workload, which won |
 
-And the only timing idiom anywhere in this repo is this, from `ForkBlur.java:143-145` and
+And the only timing idiom anywhere in this repo is this, from `ForkBlur.java:115-117` and
 `SimpleThreads.java:38`:
 
     long startTime = System.currentTimeMillis();

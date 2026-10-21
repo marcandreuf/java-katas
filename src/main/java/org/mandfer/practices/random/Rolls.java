@@ -13,7 +13,7 @@ import java.util.random.RandomGenerator;
  *
  * Seeding from the wall clock does not add entropy, it removes it. TODO 4 makes that
  * concrete. The others are guardedLock/Producer:53, guardedLock/Consumer:48 and
- * Safelock.java:107. See docs/modernization/19-randomness-and-numerics.md.
+ * Safelock.java:79. See docs/modernization/19-randomness-and-numerics.md.
  *
  * TODO 1: seeded -- RandomGeneratorFactory.of(algorithm).create(seed). Note that
  *         RandomGenerator.of(name) exists too and gives you an UNSEEDED one, which is the

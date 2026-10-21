@@ -14,9 +14,9 @@ Five `new Random()` sites, and one of them is a bug:
 | File | What is there |
 | --- | --- |
 | `collections/RandomFileLines.java:32` | `new Random(System.currentTimeMillis())` — **the bug** |
-| `concurrency/guardedLock/Producer.java:53` | `new Random()` inside `run()` |
-| `concurrency/guardedLock/Consumer.java:48` | `new Random()` inside `run()` |
-| `concurrency/Safelock.java:107` | `new Random()` inside `run()` |
+| `concurrency/guardedLock/Producer.java:25` | `new Random()` inside `run()` |
+| `concurrency/guardedLock/Consumer.java:20` | `new Random()` inside `run()` |
+| `concurrency/Safelock.java:79` | `new Random()` inside `run()` |
 
 New code: **`random/Rolls.java`**, four TODOs — and TODO 4 has nothing to implement.
 

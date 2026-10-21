@@ -16,7 +16,7 @@ What the repo has instead is `long` arithmetic on the wall clock:
 | File | What is there |
 | --- | --- |
 | `concurrency/SimpleThreads.java:38,46` | `long startTime = System.currentTimeMillis()`, then `(System.currentTimeMillis() - startTime) > defaultDelayInMiliseconds` |
-| `concurrency/forkjoin/ForkBlur.java:143-145` | start/end millis around the blur, subtracted for a duration |
+| `concurrency/forkjoin/ForkBlur.java:115-117` | start/end millis around the blur, subtracted for a duration |
 | `collections/RandomFileLines.java:32` | `new Random(System.currentTimeMillis())` — a clock used as entropy, which is its own bug; [stage 8](INDEX.md) owns that one |
 
 New code for the type distinctions: **`time/Schedule.java`**, four TODOs.
@@ -104,7 +104,7 @@ offset. That last detail has broken log parsers.
 
 ### Part four, the old code
 
-Rewrite `ForkBlur.java:143-145` with `Instant.now()` and `Duration`, **then throw it away and use
+Rewrite `ForkBlur.java:115-117` with `Instant.now()` and `Duration`, **then throw it away and use
 `System.nanoTime()` instead.** `Instant.now()` is wall-clock time; it can jump backwards when NTP
 corrects the machine, so it is the wrong tool for measuring an interval. `java.time` being the
 newer API does not make it the right answer here. Write that down — it is the best "what got
