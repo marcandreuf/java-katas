@@ -25,7 +25,7 @@ an `int` can stand in for it. **That is the only rule**, and everything below fo
 
 ## The worked example
 
-`collections/FindDups.java:40-45` has this, written in 2014:
+`collections/FindDups.java:13-18` has this, written in 2014:
 
     Comparator<String> comparator = new Comparator<String>() {
         @Override
@@ -64,13 +64,13 @@ Every anonymous class here is a lambda that was never written:
 
 | File | What is there |
 | --- | --- |
-| `collections/FindDups.java:40-45` | anonymous `Comparator<String>` — the example above |
+| `collections/FindDups.java:13-18` | anonymous `Comparator<String>` — the example above |
 | `algorithm/L3_Synchronization_Udemy.java:25,45` | two anonymous `Runnable`s |
-| `concurrency/BadThreads.java:41` | inner-class `Runnable` |
+| `concurrency/BadThreads.java:11` | inner-class `Runnable` |
 | `concurrency/guardedLock/Producer.java`, `Consumer.java` | `implements Runnable` as named classes |
 | `concurrency/OrdersProcessingSystem.java:26-33` | inner `Runnable` with an empty `run()` |
 
-1. **`FindDups.java:40` through all four forms above, in two commits.** Commit the lambda, then
+1. **`FindDups.java:13` through all four forms above, in two commits.** Commit the lambda, then
    commit `String.CASE_INSENSITIVE_ORDER` and delete it. The first commit teaches the syntax; the
    second teaches that the shortest code is no code. ([Doc 09](09-streams-and-optional.md) asks
    for the same deletion from the other direction.)
