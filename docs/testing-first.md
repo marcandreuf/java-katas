@@ -79,7 +79,9 @@ Two shortcuts worth knowing:
   as it stands, so it is the cheapest place to practise this on. Start there.
 - **`concurrency/Order` is a plain data class** — constructor and fields, nothing to extract. Its
   test is four assertions and it takes two minutes. ([Doc 01](modernization/01-records.md) then
-  turns it into a record, and the test you just wrote is what proves the record is equivalent.)
+  turns it into a record, and the test you just wrote shows exactly what changed: the record
+  is *not* equivalent, because equality becomes by value, and the one assertion that flips is the
+  evidence.)
 
 ## Concurrency is the exception, and it is most of the list
 
