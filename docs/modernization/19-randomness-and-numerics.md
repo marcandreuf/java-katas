@@ -87,7 +87,7 @@ worth taking out of a two-line method.
 
 ### Then fix the other three
 
-`Producer:53`, `Consumer:48` and `Safelock:107` all construct a `Random` inside `run()`. Converting
+`Producer:25`, `Consumer:20` and `Safelock:79` all construct a `Random` inside `run()`. Converting
 them to `RandomGenerator` is mechanical. **The interesting question is whether to pass it in**, and
 the answer tells you whether those classes were ever testable. They were not —
 [doc 07](07-classic-concurrency.md) is where that gets fixed, and this is a hint about how.

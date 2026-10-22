@@ -67,7 +67,7 @@ Every anonymous class here is a lambda that was never written:
 | `collections/FindDups.java:13-18` | anonymous `Comparator<String>` — the example above |
 | `algorithm/L3_Synchronization_Udemy.java:25,45` | two anonymous `Runnable`s |
 | `concurrency/BadThreads.java:11` | inner-class `Runnable` |
-| `concurrency/guardedLock/Producer.java`, `Consumer.java` | `implements Runnable` as named classes |
+| `concurrency/guardedLock/Producer.java`, `Consumer.java` | `extends Thread` as named classes |
 | `concurrency/OrdersProcessingSystem.java:26-33` | inner `Runnable` with an empty `run()` |
 
 1. **`FindDups.java:13` through all four forms above, in two commits.** Commit the lambda, then
@@ -79,8 +79,8 @@ Every anonymous class here is a lambda that was never written:
    has a nine-line body with a `try/catch` in it and gets worse. **Convert the first, leave the
    second, and write down the line count where you switched.** That number is your own answer to
    "when is a lambda worse than a class", and it is more useful than anyone else's.
-3. **`guardedLock/Producer` and `Consumer` are not lambda targets**, even though they implement
-   `Runnable`. Work out why in one sentence before reading on. — They hold fields and have a
+3. **`guardedLock/Producer` and `Consumer` are not lambda targets**, even though they are
+   `Runnable`s (they `extend Thread`, which implements it). Work out why in one sentence before reading on. — They hold fields and have a
    constructor. A lambda has neither: it is an implementation of one method, not a place to keep
    state.
 
