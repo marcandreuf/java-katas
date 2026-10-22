@@ -26,13 +26,13 @@ hashes by design (JEP 180)". Here's what checking that reason looks like.
 
 JEP 180 (Java 8) turns a bucket with too many collisions into a balanced tree, so the worst case is
 `O(log n)` instead of `O(n)`. The test: 20,000 keys that all return `hashCode() == 42`, looked up
-three times each (verified, while other JVMs were running, so read the ratio, not the times):
+three times each (verified, six runs on an idle machine):
 
 | Keys | Lookup time |
 | --- | --- |
 | a record with a normal `hashCode` | under 25 ms |
 | all colliding, `Comparable` | under 25 ms |
-| all colliding, **not** `Comparable` | **about 5,000 ms** |
+| all colliding, **not** `Comparable` | **4,400–5,700 ms** |
 
 **The reason is half true.** The tree only works if it can *order* the keys. Without `Comparable`,
 a lookup in the tree has to search both sides, and it degrades almost to the linked list it was

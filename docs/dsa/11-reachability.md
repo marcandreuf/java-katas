@@ -153,8 +153,8 @@ New code under tests that are already written, so there's nothing to characteriz
 4. **Maze TODO 4, `reachableFrom`**: the same loop, counting instead of stopping. If you find
    yourself copying TODO 3 and editing it, ask whether one private method can serve both.
 
-For scale (verified, a scratch BFS on an open grid, while other JVMs were running, so treat the
-times as rough): 1,000×1,000 cells in about **0.25 s**; 3,000×3,000 in about **3.4 s**.
+For scale (verified, a scratch BFS on an open grid, three runs on an idle 10-core machine):
+1,000×1,000 cells in about **0.14 s**; 3,000×3,000 in about **1.7–1.8 s**.
 
 ## What got worse
 
