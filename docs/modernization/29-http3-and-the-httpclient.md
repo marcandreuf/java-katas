@@ -48,15 +48,15 @@ and uses whichever connects first.
 
 That's measurable offline, against an HTTPS server that speaks only HTTP/1.1 over TCP: a
 `com.sun.net.httpserver.HttpsServer` on `127.0.0.1` with a self-signed certificate from
-`keytool`. A new client for every row (verified on JDK 26, on a loaded machine, so read the
-ratios rather than the exact numbers):
+`keytool`. A new client for every row, after one warm-up request (verified on JDK 26, three
+runs each):
 
 | How HTTP/3 was asked for | Negotiated | Time |
 | --- | --- | --- |
-| on the request | `HTTP_1_1` | about **2.8–3.0 s** |
-| on the client | `HTTP_1_1` | about **0.08 s** |
-| on the request, `H3_DISCOVERY = ALT_SVC` | `HTTP_1_1` | about **0.06 s** |
-| on the request, `-Djdk.httpclient.http3.maxDirectConnectionTimeout=500` | `HTTP_1_1` | about **0.9 s** |
+| on the request | `HTTP_1_1` | **2.82–2.90 s** |
+| on the client | `HTTP_1_1` | **0.07 s** |
+| on the request, `H3_DISCOVERY = ALT_SVC` | `HTTP_1_1` | **0.05 s** |
+| on the request, `-Djdk.httpclient.http3.maxDirectConnectionTimeout=500` | `HTTP_1_1` | **0.65 s** |
 
 The request-level setting waited out the HTTP/3 attempt before falling back. The client-level one
 raced, and TCP won at once. `ALT_SVC` never tried QUIC, because the server sent no `Alt-Svc`
@@ -64,7 +64,7 @@ header. And the last row shows the 2750 ms is a knob.
 
 **A correction to the old version:** it said this distinction "is not observable in these
 tests", which is true of `Http3Test`. But it presented that as a limit of working offline, and
-it isn't one. Over HTTPS it shows up as a 30-fold difference in latency, and that's the number to
+it isn't one. Over HTTPS it shows up as a 40-fold difference in latency, and that's the number to
 bring to the written question below.
 
 ## Part one: `Http3`
@@ -124,7 +124,7 @@ what the JEP chose to include.
 ## Write the answers here
 
 1. **Request-level or client-level**, for a service-to-service call inside one datacentre where
-   you control both ends? And for a public API used by mobile clients? Use the 2.8 s and 0.08 s
+   you control both ends? And for a public API used by mobile clients? Use the 2.8 s and 0.07 s
    from the worked example. _(fill in)_
 2. **Would you ever ship `HTTP_3_URI_ONLY`?** Name the deployment where a 20-second connect
    timeout beats a silent downgrade. _(fill in)_

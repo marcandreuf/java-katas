@@ -125,7 +125,7 @@ verified on JDK 26:
 | --- | --- |
 | Two forks inside a binding read the `ScopedValue` | `[acme, acme]`, a `List` |
 | One fork throws `IllegalStateException("boom")` under `allSuccessfulOrThrow()` | `StructuredTaskScope$FailedException`, cause `IllegalStateException: boom` |
-| `anySuccessfulOrThrow()`, one fork returns at once, one sleeps 5 s | `"fast"`. The scope closes in about 14 ms, and the sleeper is interrupted |
+| `anySuccessfulOrThrow()`, one fork returns at once, one sleeps 5 s | `"fast"`. The scope closes in 25–29 ms (five runs), and the sleeper is interrupted |
 | Fork, then close the scope without calling `join()` | `IllegalStateException: Owner did not join after forking` |
 | `open()` outside a binding, then `fork` from inside a new binding | `StructureViolationException: Scoped value bindings have changed` |
 
