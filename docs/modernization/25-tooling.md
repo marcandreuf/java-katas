@@ -1,103 +1,174 @@
 # 25. Tooling: jshell, source launch, jwebserver, markdown javadoc
 
-**Java 9 → 23** · stage 14 of [the release-ordered track](INDEX.md) · **no code, no tests** — the
-deliverable is that you have run each of these once
+**Java 9 to 25**: `jshell` (9, JEP 222), source launch (11, JEP 330; several files from 22,
+JEP 458), `jwebserver` and `@snippet` (18, JEPs 408 and 413), Markdown doc comments (23,
+JEP 467), compact source files (25, JEP 512) · stage 14 of [the release-ordered track](INDEX.md)
+· no build change
 
-## Why this is a stage
+**No code to commit and no tests.** The deliverable is that you've run each of these once, and
+the written answers at the end. Everything works offline with the JDK alone.
 
-Four features that are not language features and not library features, and that between them
-remove most of the reasons people used to write a throwaway `Main.java` with a `psvm` in it. Every
-one is verified working on the JDK in this VM.
+## What this stage is actually about
 
-## 1. `jshell` (Java 9, JEP 222)
+Five words, defined once:
 
-    jshell
-    jshell> "café".length()
-    jshell> "café".getBytes(java.nio.charset.StandardCharsets.UTF_8).length
+- the **launcher** is the `java` command. Given a class name it runs a compiled class. Given a
+  file ending in `.java` it compiles that file in memory and runs it, writing no `.class` files.
+- a **REPL** (read-eval-print loop) runs one expression or statement at a time and prints the
+  result. `jshell` is Java's.
+- a **compact source file** (Java 25) is a `.java` file with no class declaration, only methods
+  and fields. The compiler wraps them in a class with no name you can refer to.
+- a **doc comment** is the comment javadoc turns into HTML. The old form is `/** ... */` with
+  HTML inside. The new form is lines starting `///` with Markdown inside.
+- a **block tag** is a javadoc tag at the start of a line, like `@param` or `@return`. Javadoc
+  treats *any* line starting with `@` as one, which matters below.
 
-**Use it for every "what does this actually return" question in this track.** Half the assertions
-in docs 12–24 were settled by typing the expression somewhere rather than reasoning about it —
-`trim()` vs `strip()` on U+2000, whether `Map.of` throws or overwrites, what `filter(x -> x < 5)`
-does to `[1,2,3,10,4,5]`. Reasoning about those is slower and less reliable than asking.
+That gives one rule, and everything below follows from it: **run it rather than believe it.**
+These tools exist so that "what does this return?" costs ten seconds instead of a project. The old
+version of this doc made four claims about these tools that running them disproves. Each one is
+marked below.
 
-Useful inside it: `/vars`, `/methods`, `/imports`, `/open file.jsh`, `/env -class-path target/classes`.
-That last one lets you poke at this repo's own classes:
+## The worked example: two files, one command
+
+Java 22 lets the launcher run a program that spans several source files. The old version of this
+doc showed it as:
+
+    java App.java Helper.java       # several files, no javac, no jar
+
+Try it, with `App.java` calling `Helper.greet()` and printing its arguments (verified):
+
+    $ java App.java
+    from Helper.java args=[]
+
+    $ java App.java Helper.java
+    from Helper.java args=[Helper.java]
+
+**A correction to the old version:** you name only the file with `main`. The launcher finds
+`Helper.java` itself, in the same directory, when `App` refers to `Helper`. Anything after the
+first `.java` file is an argument to your program, so the old command passed `"Helper.java"` to
+`main`. It ran, and it printed the right greeting, which is why nobody noticed. `ls` afterwards
+shows only the two `.java` files, no `.class` (verified).
+
+That's the pattern for this whole stage: the wrong version looked like it worked.
+
+## Part one: `jshell`
 
     jshell --class-path target/classes
+    jshell> "café".length()
+    $1 ==> 4
+    jshell> "café".getBytes(java.nio.charset.StandardCharsets.UTF_8).length
+    $2 ==> 5
     jshell> new org.mandfer.practices.Door().toString()
+    $3 ==> "close"
 
-## 2. Source-file launch (Java 11, JEP 330 → Java 22, JEP 458)
+(All three verified, after `mvn -q compile`.) The first two are [doc 23](23-foreign-function-and-memory.md)'s
+TODO 4 in two lines. Useful commands inside: `/vars`, `/methods`, `/imports`, `/open file.jsh`,
+`/env -class-path target/classes` to add the repo's classes after starting.
 
-    java Hello.java                 # Java 11: one file
-    java App.java Helper.java       # Java 22: several files, no javac, no jar
+**Use it for every "what does this actually return?" question in this track.** Pick one claim
+from an earlier doc that you got wrong when you guessed, settle it in `jshell`, and write it down
+as answer 2.
 
-Java 11 let you run a single file. **Java 22 lifted the single-file restriction**, which is what
-made it useful for anything beyond a one-liner — before that, the moment your script needed a
-second class you had to go back to a build.
+## Part two: source launch, and compact source files
 
-No `.class` files are written. It compiles in memory and runs.
+The worked example above is the multi-file half. The single-file half goes back to Java 11.
 
-## 3. Compact source files (Java 25, JEP 512)
-
-See **[`snippets/Hello.java`](snippets/Hello.java)**, which runs:
-
-    java docs/modernization/snippets/Hello.java
+`docs/modernization/snippets/Hello.java` is a compact source file:
 
     void main() {
         IO.println("Hello from a compact source file.");
+        IO.println("No class. No static. No args array.");
     }
 
-No `package`, no `class`, no `static`, no `String[] args`. [Stage 16](27-module-imports-and-compact-sources.md)
-owns this as an exercise; it is listed here because it is the end of the same line of work as
-`jshell` and source launch — **making the smallest useful Java program small.**
+    $ java docs/modernization/snippets/Hello.java world
+    Hello from a compact source file.
+    No class. No static. No args array.
 
-Note where `println` came from: JEP 512 added **`java.lang.IO`**, implicitly available in a compact
-source file. That is a new class in `java.lang` in 2025, which tells you how seriously the
-"teaching Java should not require explaining `public static void main`" problem was taken.
+(Verified, from the repo root.) No `package`, no `class`, no `static`, no `String[] args`.
+[Doc 27](27-module-imports-and-compact-sources.md) owns it as an exercise. It's here because it's
+the end of the same line of work as `jshell` and source launch: making the smallest useful Java
+program small. At `--release 24`, `javac` says `implicitly declared classes are not supported in
+-source 24` (verified): it was a preview feature until 25.
 
-## 4. `jwebserver` (Java 18, JEP 408)
+**A correction to the old version:** it said `java.lang.IO` was "implicitly available in a compact
+source file". It's available in *every* file. `IO` is a class in `java.lang`, and `java.lang` is
+imported everywhere: an ordinary `public class N` with `IO.println` in its `main` compiles and
+runs at `--release 25` (verified). At `--release 24`, the same class fails with `cannot find
+symbol` (verified). Ask yourself what it says that Java added a class to `java.lang` in 2025 for
+this.
+
+## Part three: `jwebserver`
 
     jwebserver -p 8000 -d /path/to/dir
 
-A static file server in the JDK. Not for production — it says so itself — and exactly right for
-serving a javadoc build, a coverage report, or a directory you want to `curl`.
+A static file server in the JDK. Verified, serving one file:
 
-It is also a **programmable** API (`com.sun.net.httpserver.SimpleFileServer`), which matters here:
-`httpclient/LocalHttp.java` already starts a `com.sun.net.httpserver.HttpServer` inside the test
-JVM so that [doc 10](10-sequenced-collections-and-httpclient.md) works with no network. JEP 408 is
-why that class is a reasonable thing to build on rather than a hack.
+    Binding to loopback by default. For all interfaces use "-b 0.0.0.0" or "-b ::".
+    GET  /a.txt      200
+    GET  /missing    404
+    POST /a.txt      405
 
-## 5. Markdown doc comments (Java 23, JEP 467)
+It logs every request and answers only `GET` and `HEAD`. It isn't for production, and it binds to
+`127.0.0.1` unless told otherwise. That's exactly right for serving a javadoc build or a coverage
+report.
+
+It's also a programmable API, `com.sun.net.httpserver.SimpleFileServer`, in the same module as the
+`HttpServer` that `httpclient/LocalHttp.java` starts so that [doc 10](10-sequenced-collections-and-httpclient.md)
+works with no network.
+
+## Part four: Markdown doc comments, and what they actually fix
 
     /// A markdown doc comment.
     ///
     /// - no `<p>` tags
-    /// - a [link to String]
+    /// - a [link to String][String]
     ///
     /// ```java
-    /// Doc.answer();
+    /// @Override public String toString() { return "x"; }
     /// ```
 
-Three slashes instead of `/** */`, and the body is CommonMark. **`{@code ...}` becomes backticks,
-`{@link String}` becomes `[String]`, `<ul><li>` becomes `-`, and `<pre>{@code ...}</pre>` becomes
-a fenced block.** Verified: `javadoc` renders the above to real `<li>` and a real link.
+`javadoc` renders that to a real `<li>`, a real link to `String`, and a code block with the
+`@Override` intact (verified). Backticks replace `{@code ...}`, `[String]` replaces
+`{@link String}`, `-` replaces `<ul><li>`, and a fenced block replaces `<pre>{@code ...}</pre>`.
 
-Worth knowing for one specific reason: **the old form's `<pre>{@code}` for a code sample is
-genuinely painful** — HTML entities, indentation, and `@` signs that javadoc tries to interpret.
-If you have ever had a `@Override` inside a javadoc code sample silently eat the rest of the
-comment, that is what this fixes.
+**A correction to the old version:** it said an `@Override` inside a `<pre>{@code ...}</pre>`
+sample "silently eats the rest of the comment". On JDK 26 it doesn't: inside `{@code ...}` the
+sample renders whole (verified). What does break in the old form, all verified with
+`javadoc -Xdoclint:all`:
 
-Related: **`@snippet`** (Java 18, JEP 413) lets a doc comment include a region of a real source
-file by reference, so the sample is compiled and cannot rot. The two solve different halves of the
-same problem.
+| Old form | What happens |
+| --- | --- |
+| `@Override` in a bare `<pre>`, without `{@code` | `error: unknown tag`: it's read as a block tag |
+| `a < b` in a bare `<pre>` | `error: malformed HTML` |
+| `{@code if (x) { return; }` with unbalanced braces | `error: unterminated inline tag` |
+
+And Markdown doesn't fix the first one. A `///` line starting with `@Override` *outside* a code
+fence is still `error: unknown tag` (verified). Inside a fence it's fine.
+
+**`@snippet`** (Java 18) includes a region of another file in a doc comment. **A correction to the
+old version:** it said the sample "is compiled and cannot rot". Javadoc doesn't compile it. A
+snippet file calling a method that doesn't exist renders into the HTML with no error and no
+warning (verified). It only stays correct if your build compiles that file somewhere else, for
+example as test code.
 
 ## Write the answers here
 
-1. **Which of the five did you not know existed?** _(fill in)_
-2. **Settle one question from an earlier stage in `jshell` rather than by reading** — pick one you
-   got wrong — and write down which, and what you had assumed. _(fill in)_
+1. **Which of these didn't you know existed, and which of the corrections above would you have
+   believed?** _(fill in)_
+2. **Settle one question from an earlier stage in `jshell`**, one you guessed wrong. Write down
+   which, what you assumed, and what it returned. _(fill in)_
 3. **The `main` question.** `public static void main(String[] args)` was the first thing you ever
-   had to not understand. Java 25 removed the need for all four modifiers. _Was that worth a new
-   class in `java.lang`?_ Argue the other side too. _(fill in)_
-4. **What would you still write a `psvm` for**, now that `java file.java` and `jshell` both exist?
-   _(fill in)_
+   had to not understand. Java 25 removed the need for all four modifiers and the parameter. Was
+   that worth a new class in `java.lang`? Argue the other side too. _(fill in)_
+4. **What would you still write a `public static void main` for**, now that `java File.java` and
+   `jshell` both exist? _(fill in)_
+
+## What got worse
+
+- _(fill this in)_
+
+Prompts: `java App.java Helper.java` ran and looked right. What else in your daily tooling
+would you only find out was wrong by reading its arguments? Markdown comments mean a file can mix
+`/** */` and `///`: what does that do to a codebase's consistency, and would you migrate old
+comments? A source-launched script has no build file. Where do its dependencies go when it needs
+one?
