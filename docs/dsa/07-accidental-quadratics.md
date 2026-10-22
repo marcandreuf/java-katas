@@ -36,22 +36,21 @@ Not the exercise. A queue drained from the front, two ways:
 about n²/2 of them. `ArrayDeque.poll()` moves a head index. Measured cold, n = 100,000, three
 runs (verified):
 
-    ArrayList.remove(0)   940 ms    773 ms    810 ms
-    ArrayDeque.poll()      14 ms     11 ms     12 ms        ratio 65-69x
+    ArrayList.remove(0)   659 ms    653 ms    639 ms
+    ArrayDeque.poll()       6 ms      6 ms      6 ms        ratio 96-107x
 
 And the third shape, building a 50,000-character string (verified, same three runs):
 
-    String +=             382 ms    275 ms    305 ms
-    StringBuilder           5 ms      2 ms      2 ms        ratio 74-138x
+    String +=             280 ms    273 ms    274 ms
+    StringBuilder           2 ms      1 ms      2 ms        ratio 127-140x
 
 The fix for each one is the obvious one-line change. The skill is noticing them, because the code
 doesn't look slow: a `while` loop and a method call. (The `String +=` case is why "the compiler
 turns `+` into a `StringBuilder`" doesn't save you. It does that within one expression, so every
 iteration of the loop still copies the whole string built so far.)
 
-These numbers were taken on a 10-core machine **while other JVMs were running**, so they're
-noisier than they'd be on an idle machine. Treat the ratios as the result, not the milliseconds.
-[Doc 34](../modernization/34-measuring-it-properly.md) has the rules for measuring properly. These
+These numbers are from an idle 10-core machine. Yours will differ: compare ratios, not
+milliseconds. [Doc 34](../modernization/34-measuring-it-properly.md) has the rules for measuring properly. These
 are whole-program timings, not microbenchmarks.
 
 ## The measurement for the exercise's shape
@@ -61,20 +60,23 @@ worst case for `contains`). Three cold runs, and one warm (verified):
 
 | n | contains, cold | set, cold | ratio, cold (3 runs) | ratio, warm |
 | --- | --- | --- | --- | --- |
-| 100 | 0.5–2.3 ms | 0.2–3.9 ms | **0.6x – 2.7x** | 3x |
-| 1,000 | 3–20 ms | 0.2–0.3 ms | 14x – 101x | 4x |
-| 10,000 | 30–94 ms | 1.6–16 ms | 2x – 32x | 90x |
-| 100,000 | **3.7–5.0 s** | 15–24 ms | **157x – 243x** | **2,372x** |
+| 100 | 0.39–0.42 ms | 0.14–0.18 ms | **2.2x – 2.8x** | 4x |
+| 1,000 | 3.0–3.2 ms | 0.19–0.20 ms | 16x | 3x |
+| 10,000 | 28–31 ms | 1.2–8.1 ms | 3.5x – 26x | 81x |
+| 100,000 | **3.0–3.1 s** | 10–12 ms | **242x – 307x** | **1,847x** |
 
-**Read the n = 100 row first.** In one of the three runs the *set* was slower. At that size the
-difference is smaller than the noise, the whole thing costs about a millisecond, and "it doesn't
-matter" is the right answer. Saying so is part of this stage.
+**Read the n = 100 row first.** The set is two or three times faster, and the slow version costs
+**less than half a millisecond**. At that size "it doesn't matter" is the right answer, and saying
+so is part of this stage. (The one 10,000 run where the set took 8 ms is a reminder that a single
+cold run can be off by a factor of seven: run it more than once.)
 
-**Then the bottom row.** Four to five seconds, from the same loop that took a millisecond in the
-test. The **old version of this doc** gave one number for each cell (2.6x at 100, 259x at 100,000)
-and a "crossover between 1,000 and 10,000". The table above shows why one number per cell isn't
-reproducible, and it doesn't show a crossover either: the ratio keeps growing with n. What *is*
-stable is the shape: a few milliseconds at n = 1,000, and several seconds at n = 100,000.
+**Then the bottom row.** Three seconds, from the same loop that took under half a millisecond in
+the test. The old version of this doc gave 2.6x at 100 and 259x at 100,000, and those reproduce,
+within run-to-run noise. What doesn't hold up is its "crossover between 1,000 and 10,000": there's
+no point where the curve bends. The ratio just keeps growing with n, and **the warm column grows
+faster**, so the gap you'd measure in a long-running service is bigger than the one in a quick
+test. What decides whether it matters is the absolute cost: about 3 ms at n = 1,000, and seconds
+at n = 100,000.
 **Somewhere between those two n stops being a test size and becomes a production size.** That range is
 where most real collections are.
 
@@ -136,9 +138,9 @@ Four shapes. Recognising them on sight is the deliverable:
 - _(fill this in)_
 - _(fill this in)_
 
-Prompts: at n = 100 the quadratic costs about a millisecond. Write down the n at which you'd change
+Prompts: at n = 100 the quadratic costs under half a millisecond. Write down the n at which you'd change
 the code, and how you'd find out what n is in production. A `HashSet` costs allocation and hashing:
 is there a size at which the `contains` loop genuinely wins, and did you measure it or assume it?
-(One run above says yes, at 100, and two say no.) What would make shape 4 visible in review, when
+(At 100, on this machine, it didn't, in any run.) What would make shape 4 visible in review, when
 neither half is wrong on its own? The prefix/suffix version is linear and correct, and it's also
 harder to read than `product(otherValues(...))`: at four elements, which would you rather maintain?

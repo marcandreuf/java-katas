@@ -20,11 +20,13 @@ package org.mandfer.practices.algorithm;
  *         survives on this JVM. Catch StackOverflowError to do it.
  *
  *         Then read the doc, because catching StackOverflowError is unsound and the number you
- *         get is not reproducible -- it moved between 13,663 and 21,827 across two runs on the
- *         same machine with no flags changed. The exercise is to get a number and then distrust
- *         it, which is the real lesson about recursion limits.
+ *         get is not reproducible -- in one JVM it came out at 3,839 when found by doubling and
+ *         bisecting, and 19,500 when found by stepping up 250 at a time, on the same machine with
+ *         no flags changed. The exercise is to get a number and then distrust it, which is
+ *         the real lesson about recursion limits.
  * TODO 3: cellValueMemoized -- Pascal's triangle cell, memoised. Same answers as
- *         PascalsTriangleRecursive.cellValue, and row 30 in microseconds instead of 3 seconds.
+ *         PascalsTriangleRecursive.cellValue, and row 30 in about 4 milliseconds instead of
+ *         3 seconds.
  * TODO 4: countCellValueCalls -- instrument the UNMEMOISED recursion and return the call count.
  *         Row 6 is 120 and row 30 is over two billion. Then answer the honest question the doc
  *         asks: at the repo's own usage, printPascal(6), is any of this worth fixing?

@@ -39,23 +39,23 @@ Frames before `StackOverflowError`, three fresh JVMs per row (verified):
 
 | `-Xss` | `trivial()` | `four(long × 4)` |
 | --- | --- | --- |
-| 256k | 3,644 · 1,796 · 3,644 | 1,402 · 1,039 · 1,402 |
-| 512k | 7,480 · 8,020 · 7,568 | 2,764 · 2,764 · 2,764 |
-| 1m | 20,234 · 20,474 · 20,730 | 6,863 · 7,290 · 7,592 |
-| 4m | 101,887 · 101,948 · 101,948 | 39,212 · 39,212 · 39,212 |
-| default | **16,820 · 10,732 · 23,306** | 8,964 · 6,213 · 8,964 |
+| 256k | 1,796 · 1,796 · 2,008 | 1,039 · 1,039 · 1,039 |
+| 512k | 7,591 · 8,491 · 7,060 | 2,764 · 2,840 · 2,764 |
+| 1m | 20,944 · 21,565 · 21,625 | 7,261 · 7,880 · 7,986 |
+| 4m | **98,888 · 199,113 · 202,017** | 37,196 · 37,172 · 37,669 |
+| default | 20,918 · 21,916 · 20,329 | 7,249 · 7,938 · 6,593 |
 
 Three things to read in it:
 
-- **Two variables, not one: stack size and frame size.** With the `-Xss` values above, four `long`
-  parameters cost about 60% of the depth. "Recursion is fine up to about 10,000" isn't a fact about Java. It's a fact about one
-  method on one configuration.
-- **The default row moved by a factor of two** across three runs, with nothing changed. How deep you
-  get depends on whether the JIT compiled the method before the stack ran out, because compiled
-  frames are smaller than interpreted ones, and that timing varies from run to run. Take the JIT
-  out of it and the numbers stop moving (verified, three runs each): `-Xint` (interpreter only)
-  gives **10,732 · 6,213** every time, exactly the low default run, and `-Xcomp` (compile before
-  the first call) gives **59,026 · 59,016**. Compiled, the four `long`s cost almost nothing.
+- **Two variables, not one: stack size and frame size.** Four `long` parameters cost between
+  about 40% (at 256k) and 80% (at 4m) of the depth. "Recursion is fine up to about 10,000" isn't a
+  fact about Java. It's a fact about one method on one configuration.
+- **The 4m row moved by a factor of two** across three runs, with nothing changed: 98,888, then
+  199,113. How deep you get depends on whether the JIT compiled the method before the stack ran
+  out, because compiled frames are smaller than interpreted ones, and that timing varies from run
+  to run. Take the JIT out of it and the numbers stop moving (verified, three runs each, default
+  stack): `-Xint` (interpreter only) gives **10,732 · 6,213** every time, and `-Xcomp` (compile
+  before the first call) gives **59,026 · 59,016**. Compiled, the four `long`s cost almost nothing.
 - `trivial()` is a tail call: calling itself is the last thing it does. It still overflowed, which
   is the evidence that HotSpot doesn't eliminate tail calls. In Java, a self-recursive call is a
   stack frame, always.
@@ -115,11 +115,11 @@ cell, and for whole triangles (verified, three runs):
 | cell (3, 6) | 29 | — |
 | cell (3, 10) | 89 | — |
 | cell (10, 20) | 335,919 | — |
-| cell (15, 30) | **290,845,349** | 0.45–0.52 s |
-| row 30, every cell | **2,147,483,616** | 3.3–3.8 s |
-| rows 1–25 | 134,217,349 | 0.24–0.28 s |
-| rows 1–27 | 536,870,476 | 0.96–1.2 s |
-| rows 1–30 | 4,294,966,767 | 7.5–7.8 s |
+| cell (15, 30) | **290,845,349** | 0.44–0.45 s |
+| row 30, every cell | **2,147,483,616** | 3.25–3.29 s |
+| rows 1–25 | 134,217,349 | 0.23–0.24 s |
+| rows 1–27 | 536,870,476 | 0.93–0.95 s |
+| rows 1–30 | 4,294,966,767 | 7.0–7.1 s |
 
 The count roughly doubles with each extra row. The first three rows are what
 `the_call_count_is_exponential_in_the_row` asserts.
@@ -129,10 +129,11 @@ Commits, in this order:
 1. **Characterize first.** `cellValue` is private, so pin `printPascal(6)`'s output (capture
    `System.out`). Those are the only values the repo actually uses.
 2. **TODO 4, `countCellValueCalls`**, so you can measure before you change anything.
-3. **TODO 3, `cellValueMemoized`.** Row 30 drops from seconds to about **4–5 ms** in a fresh JVM
-   (verified, a `HashMap` memo). **The old version of this doc said microseconds**, and the javadoc
-   in `Recursion.java` still does. Cold, most of the cost is class loading and boxing, not the
-   arithmetic. That's still about 750 times faster.
+3. **TODO 3, `cellValueMemoized`.** Row 30 drops from 3.3 seconds to **3.5–4.1 ms** in a fresh
+   JVM (verified, a `HashMap` memo, three runs). **The old version of this doc said
+   microseconds**, and the javadoc in `Recursion.java` still does. There are only a few hundred
+   distinct cells, so the milliseconds are a fresh JVM's start-up costs (most likely class loading,
+   interpreted code and boxing), not the arithmetic. That's still about 800 times faster.
 
 **Then TODO 4's question, which has the uncomfortable answer.** The repo's only caller is `main`,
 which calls `printPascal(6)`. **That's 219 calls** (verified), and it runs instantly. (The old

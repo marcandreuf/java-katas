@@ -8,8 +8,8 @@ import java.util.List;
  *
  * docs/dsa/research.md calls accidental quadratics the single most common real performance bug.
  * It is also the one that is invisible at test sizes: measured here, a contains-in-a-loop is
- * 2.6x slower than a set at n=100 and 259x slower at n=100,000. You test at the first number
- * and deploy at the second.
+ * 2-3x slower than a set at n=100 and 240-310x slower at n=100,000 (cold, idle machine).
+ * You test at the first number and deploy at the second.
  *
  * The old-code target is ProductsOfArrayElementsTest, whose productsArray() is O(n^2) by
  * construction -- it calls product(otherValues(...)) once per element, and each call walks the
