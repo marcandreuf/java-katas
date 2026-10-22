@@ -20,7 +20,8 @@ import java.util.List;
  *         changed. Then run the KeysRace driver in docs/dsa/03 before and after, and
  *         compare the two.
  *
- *         The difference is roughly 65x on 20,000 keys. It is JEP 180: a HashMap bucket that
+ *         The difference on 20,000 keys is about 30x on a cold JVM and 200-300x once warmed
+ *         up, and it grows with the number of keys. It is JEP 180: a HashMap bucket that
  *         overflows turns into a red-black tree, a tree needs an ordering, and without
  *         Comparable it cannot build one. The interface has nothing to do with hashing and it
  *         is the whole difference. Write down why this is a SECURITY feature and not a

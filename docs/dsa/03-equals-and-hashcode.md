@@ -113,20 +113,22 @@ it as `KeysRace.java` **outside the repo**, because it's a measuring tool, not e
     java -cp target/classes KeysRace.java 20000
 
 **Run it before TODO 4 as well as after.** Before, the two classes are identical and so are their
-times. That's your control. Verified, 20,000 put-then-get pairs, three runs each:
+times. That's your control. Verified, 20,000 put-then-get pairs, three runs each, on an idle
+machine:
 
 | | `Colliding` | `ComparableColliding` |
 | --- | --- | --- |
-| before TODO 4 | 2.7 to 3.4 s | 2.5 to 3.3 s |
-| after TODO 4 | 3.3 to 4.1 s | 82 ms, then 11 to 14 ms |
+| before TODO 4 | 2.1 to 2.2 s | 1.9 to 2.4 s |
+| after TODO 4 | 2.1 to 2.3 s | 75 ms, then 8 to 10 ms |
 
-(The machine was busy, so read the ratio, not the times. The first `ComparableColliding` run
-includes JIT warm-up.)
+(The first `ComparableColliding` run includes JIT warm-up.)
 
 **The old version of this doc said "65x", and that number isn't a constant.** The ratio here was
-about 40x on the first run and about 300x once warmed up. And it grows with the input: in a
-separate run, `Colliding` took 106 ms at 5,000 keys and 463 ms at 10,000 (verified), so doubling
-the keys roughly quadrupled the time. That's O(n²) total, O(n) per operation. The `Comparable`
+about 30x on the first run and 220x to 280x once warmed up. And it grows with the input: in a
+separate run, `Colliding` took 70 ms at 5,000 keys, 403 ms at 10,000, 2.1 to 2.3 s at 20,000 and
+17 s at 40,000, while the `Comparable` version stayed between 2 and 16 ms (verified). Each
+doubling of the keys multiplied `Colliding`'s time by 5 to 8, more than the 4 that O(n²) total,
+O(n) per operation, predicts on its own. The `Comparable`
 version is O(n log n) total. **A ratio between two different growth rates has no fixed value**,
 so the answer to "how much faster?" is "it depends on n, and gets worse." Try 40,000 and see.
 

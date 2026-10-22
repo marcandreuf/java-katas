@@ -35,11 +35,12 @@ you measure.
 
 ## The worked example: the one race `LinkedList` does win
 
-Remove every other element from a 100,000-element list, through its iterator (verified, two runs):
+Remove every other element from a 100,000-element list, through its iterator (verified, four
+runs on an idle machine):
 
-    LinkedList, iterator.remove()     13.6 ms,  1.4 ms
-    ArrayList,  iterator.remove()      367 ms,  369 ms     ~270x slower than the second LinkedList run
-    ArrayList,  removeIf(...)         10.3 ms,  1.1 ms
+    LinkedList, iterator.remove()     4.0 to 8.8 ms
+    ArrayList,  iterator.remove()     360 to 369 ms      40 to 90 times slower
+    ArrayList,  removeIf(...)         9 to 11 ms on the first run of a JVM, 1.1 ms after that
 
 That's the textbook case, and it's real: removing at the iterator's position is O(1) for a linked
 list, and for an array it shifts every element after it, so 50,000 removals cost O(n²). **The old
@@ -47,24 +48,23 @@ version of this doc said "there is no operation where `LinkedList` is the right 
 first two rows say otherwise.**
 
 The third row is why the advice survives anyway. `removeIf` (Java 8) compacts the array in one
-pass, O(n), and it's as fast as the linked list. The loop that made `LinkedList` win is a loop
-nobody needs to write any more. That's what this stage keeps finding: the complexity argument is
+pass, O(n), and once warmed up it beats the linked list. The loop that made `LinkedList` win is
+a loop nobody needs to write any more. That's what this stage keeps finding: the complexity argument is
 correct, and the operation it's about can usually be avoided.
 
 ## The claim this stage exists to kill
 
 > "`LinkedList` is better for insertion because it is O(1)."
 
-Inserting at `size()/2`, 100,000 times (verified, three runs, ratios rather than absolute times
-because the machine was busy):
+Inserting at `size()/2`, 100,000 times (verified, six runs over two JVMs, idle machine):
 
 | | Time |
 | --- | --- |
-| `LinkedList` | 9.6 to 14.8 s |
-| `ArrayList` | 0.37 to 0.51 s |
+| `LinkedList` | 7.1 to 7.7 s |
+| `ArrayList` | 0.37 to 0.38 s |
 
-**20 to 40 times slower, at the one operation it's supposed to win.** (The old version of this
-doc measured 14x on a quiet machine. The ratio moves with load; it was never close.) The O(1)
+**About 20 times slower, at the one operation it's supposed to win.** (The old version of this
+doc said 14x. Your machine will give its own number; it won't be close to even.) The O(1)
 insertion is real and irrelevant here: getting *to* the middle is O(n) pointer-following, each step
 a possible cache miss, while `ArrayList` does a single `System.arraycopy` over contiguous memory.
 Both are O(n) per insert. The constants are what differ.
@@ -84,9 +84,11 @@ right tool. A single-file program (`java Probe.java`) or `jshell` both work.
 2. **`ArrayList` growth.** It grows by **1.5x**, not 2x (`newCapacity = old + old >> 1` in the JDK
    source). Work out how many reallocations it takes to reach a million elements from the default
    capacity of 10, and how many elements get copied along the way. Then measure whether
-   `new ArrayList<>(1_000_000)` is faster. (Verified here: pre-sizing was faster on every run,
-   by 1.5x to 4x, with a lot of noise. Most of the time goes into boxing a million `Integer`s,
-   which pre-sizing doesn't save. Knowing that is the point.)
+   `new ArrayList<>(1_000_000)` is faster. (Verified here, ten runs on an idle machine: pre-sizing
+   was usually faster, by anywhere from 1.1x to 6x, and once it was *slower*, 57 ms against 13 ms.
+   The noise is garbage collection: most of the time goes into boxing a million `Integer`s, which
+   pre-sizing doesn't save, and a collection landing in one run swamps the difference. Knowing
+   that is the point.)
 3. **`PriorityQueue` iteration order.** Add `5, 1, 3` and iterate it. You get `[1, 5, 3]`
    (verified): **not sorted.** It's a binary heap, so only `peek()` is guaranteed to be the
    smallest. And `toString()` shows heap order, which looks sorted often enough to fool a test:
