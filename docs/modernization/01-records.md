@@ -154,9 +154,9 @@ list never sees it. Worse, all hundred closed doors are now *equal* (verified, w
     new HashSet<>(doors).size()      // 1: a hundred doors, one element
 
 Door #6 and door #7 are different doors even when both are closed. **Their identity is the data
-that matters, and a record throws it away.** That is the one sentence to write down. (Doc
-[03](03-pattern-matching.md) and [04](04-switch-and-text-blocks.md) modernize `Door` without
-making it a record.)
+that matters, and a record throws it away.** That is the one sentence to write down. ([Doc
+03](03-pattern-matching.md) modernizes `Door.toString()` without making `Door` a record, and
+[doc 04](04-switch-and-text-blocks.md) explains why a switch doesn't help either.)
 
 **`generics/PageObject.java`: built to be extended, so no.** It is an empty class, and
 `FirstPageObject.java:3` is `class FirstPageObject extends PageObject`. Records are implicitly

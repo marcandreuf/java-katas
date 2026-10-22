@@ -120,7 +120,7 @@ non-deterministic, because the demo is the point. Read it before you try to pin 
 | --- | --- | --- |
 | `algorithm/FindMiddleIndex` | DSA 12 | **yes** — returns an `int`. Start here. |
 | `concurrency/Order` | mod 01, 03, 12 | **yes** — plain data class |
-| `algorithm/DecimalToBinary` | mod 03, 04 · DSA 12 | no — `void` + print, extract first |
+| `algorithm/DecimalToBinary` | mod 03 · DSA 12 | no — `void` + print, extract first |
 | `collections/FindDups` | mod 05, 09, 12, 14, 17 | no — `main` + print, extract first |
 | `collections/ArgsRandom` | mod 16 | no — `main` + print |
 | `collections/RandomFileLines` | mod 05, 09, 13, 17, 18, 19, 30 | no — `main` + print, reads a file |

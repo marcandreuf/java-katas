@@ -75,7 +75,7 @@ the real bugs are and you want the rest quiet by then.
 | 01 | Records | `Order`, `Door`, the maze `Cell`, `generics/PageObject` |
 | 02 | Sealed types | new code, `sealedtypes/ToolCallResult` |
 | 03 | Pattern matching | `Door`, `DecimalToBinary` |
-| 04 | Switch expressions, text blocks | `Door.toString`, `The100DoorsCyberDojoTest` |
+| 04 | Switch expressions, text blocks | `Direction.opposite` (experiments), `SimpleThreads` usage |
 | 05 | `var` and the diamond | eight pre-diamond sites across the repo |
 | 06 | Virtual threads | `SumWordsLength`, `SimpleThreads`, `OrdersProcessingSystem` |
 | 07 | Classic concurrency | `guardedLock/*`, `forkjoin/ForkBlur` |
