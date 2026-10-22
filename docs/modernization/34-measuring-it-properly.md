@@ -1,67 +1,86 @@
 # 34. Measuring it properly
 
-**Version-independent** · stage 23 of [the release-ordered track](INDEX.md) · **the last stage,
-and it invalidates some of your earlier answers**
+**Version-independent** (JMH 1.37, checked on JDK 26) · stage 23 of
+[the release-ordered track](INDEX.md) · **build change: two test-scope dependencies and one
+compiler setting** · the last stage, and it invalidates some of your earlier answers
 
-## Why this is last
+## What this stage is actually about
 
-Five earlier stages ask you to make a performance claim:
+Five words, defined once:
 
-| Stage | The claim it asks for |
-| --- | --- |
-| [06](06-virtual-threads.md) | a pool of 3 takes `tasks / 3 * blockMillis`, virtual threads take `blockMillis` |
-| [08](08-memory-model.md) | `synchronized` vs `AtomicLong` vs `LongAdder` at a million increments a second |
-| [14](14-map-defaults-and-collectors.md) | at what input size the stream counter beats the `merge` loop |
-| [22](22-stream-gatherers.md) | whether `windowSliding` beats an index loop |
-| [31](31-runtime-defaults.md) | four collectors, same workload, which won |
+- a **microbenchmark** times a small piece of code, a method or a loop, in isolation. Its result
+  is nanoseconds per operation, and almost everything about the JVM conspires to make that number
+  wrong.
+- **warmup** is the time before the JIT has compiled the code you care about. The JVM starts in
+  the interpreter, then compiles hot code with C1 and later C2. Code timed from cold is timing the
+  interpreter.
+- **dead code elimination** is the JIT deleting work whose result nobody uses. It's legal, and
+  it's the most common reason a benchmark reports an impossible number.
+- **constant folding** is the JIT computing a value at compile time when its inputs can't change,
+  such as a `static final` field. Then the work is done once, not once per call.
+- **JMH** (Java Microbenchmark Harness) is the OpenJDK tool that handles all of the above: it
+  warms up, makes results escape so they can't be deleted, reads inputs from non-final fields, and
+  runs each benchmark in a fresh JVM (a **fork**).
 
-And the only timing idiom anywhere in this repo is this, from `ForkBlur.java:115-117` and
-`SimpleThreads.java:38`:
+That gives one rule, and everything below follows from it: **a measurement is only evidence if
+you know what the JIT did to the code you measured.** A stopwatch around a loop measures whatever
+was left after the JIT finished with it, and that may be nothing.
 
-    long startTime = System.currentTimeMillis();
-    // ... work ...
-    long endTime = System.currentTimeMillis();
+## The worked example: a benchmark of nothing
 
-**Every number you produced that way is suspect**, and this stage is about why. Go back and
-re-read your own "what got worse" sections afterwards.
+Not the exercise. Three JMH benchmarks on `Math.log`, run on JDK 26 (verified, 3 warmup and 3
+measured iterations, one fork):
 
-## Four reasons a hand-timed microbenchmark lies
+    @Benchmark public void   baseline()  { }
+    @Benchmark public void   discarded() { Math.log(x); }
+    @Benchmark public double returned()  { return Math.log(x); }
 
-1. **JIT warmup.** The first few thousand invocations run interpreted, then C1, then C2. A loop
-   timed from cold measures the interpreter. This is the big one and it typically moves results by
-   an order of magnitude, not a few percent.
-2. **Dead code elimination.** If you do not consume the result, C2 is entitled to delete the work
-   entirely. The classic outcome is a benchmark proving some operation takes 0.3ns — because it
-   does not happen.
-3. **Constant folding.** Benchmark a method on a `static final` input and C2 may compute it once at
-   compile time. [Stage 22](33-preview-shelf.md)'s `StableValue` exists *because* constant folding
-   is this powerful.
-4. **On-stack replacement and loop unrolling** make the timed loop structurally different from the
-   code you are trying to measure.
+    Benchmark           Mode  Cnt   Score   Error  Units
+    LogBench.baseline   avgt    3   0.364 ± 0.082  ns/op
+    LogBench.discarded  avgt    3   0.363 ± 0.024  ns/op
+    LogBench.returned   avgt    3  13.616 ± 0.255  ns/op
 
-Add to that: `currentTimeMillis` has millisecond resolution and is wall-clock, so NTP can step it
-backwards mid-measurement. **`System.nanoTime` is the one for intervals** — which is the correction
-[doc 13](13-java-time.md) already asks you to make, where the newer `Instant.now()` is the *wrong*
-answer.
+`discarded` costs the same as an empty method. **The logarithm isn't slow or fast: it isn't
+there.** The JIT saw the result go nowhere and deleted the call. Returning the value makes JMH
+consume it, and the real cost appears, about 37 times higher. (These ran on a machine with other
+JVMs busy, so trust the ratio, not the nanoseconds.)
 
-## The exercise
+It isn't only microbenchmarks. While writing [doc 31](31-runtime-defaults.md), a program that
+measured heap use before and after filling an array reported **-4.2 bytes per object**. The array
+wasn't read after the loop, so the GC was allowed to collect it before the second measurement.
+One line that used the array afterwards fixed it (verified). Same mistake, different tool.
 
-### 1. Prove the problem to yourself
+## Where the old timing idiom is
 
-Before adding any tooling, write the naive benchmark and watch it misbehave:
+`ForkBlur.java:115-117` times the blur with `System.currentTimeMillis()` around one
+`pool.invoke`. That's the repo's one stopwatch. **A correction to the old version:** it named
+`SimpleThreads.java:38` as a second. That line uses `currentTimeMillis()` as a timeout ("give up
+after this long"), not to measure anything. And `RandomFileLines.java:32` uses it as a `Random`
+seed, which is [doc 19](19-randomness-and-numerics.md)'s problem.
 
-    long t0 = System.nanoTime();
-    long sum = 0;
-    for (int i = 0; i < 1_000_000; i++) sum += i % 7;
-    long t1 = System.nanoTime();
+`currentTimeMillis()` is wall-clock time: its javadoc says the granularity depends on the OS, and
+the clock can be adjusted while you measure. `System.nanoTime()`'s javadoc says it's for elapsed
+time and nothing else. For intervals, use `nanoTime`.
 
-Run it. Then run it in a loop five times in one JVM and watch the number fall as the JIT warms up.
-Then delete `sum` from the output and watch it fall further. **Those two observations are the
-entire case for JMH** and they cost you four minutes.
+## Part one: prove the problem to yourself
 
-### 2. Add JMH
+Before any tooling, in a scratch file:
 
-Add to `pom.xml` — this is the one dependency in this whole track that is not in the JDK:
+    for (int run = 0; run < 5; run++) {
+        long t0 = System.nanoTime(); long sum = 0;
+        for (int i = 0; i < 1_000_000; i++) sum += i % 7;
+        long t1 = System.nanoTime();
+        System.out.println("run " + run + ": " + (t1 - t0) / 1000 + " us sum=" + sum);
+    }
+
+Run it. Then take `sum` out of the `println` and run it again. Then run the first version with
+`java -Xint`. You should see both effects, warmup and deletion, within five runs (verified). Record
+your numbers for question 1.
+
+## Part two: add JMH, as its own commit
+
+Add both as `test` scope dependencies in `pom.xml`. JMH is the one dependency in this whole track
+that isn't in the JDK:
 
     <dependency>
         <groupId>org.openjdk.jmh</groupId>
@@ -76,67 +95,87 @@ Add to `pom.xml` — this is the one dependency in this whole track that is not 
         <scope>test</scope>
     </dependency>
 
-**Run `./scripts/warm-cache.sh` again afterwards** if you want offline builds to keep working —
-it is the one thing in this repo that reaches the network.
+**A correction to the old version:** it stopped there. On JDK 26 that compiles, and then
+nothing runs (verified):
 
-The shape:
+    java ... org.openjdk.jmh.Main LogBench
+    java.lang.RuntimeException: ERROR: Unable to find the resource: /META-INF/BenchmarkList
 
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    @State(Scope.Benchmark)
-    @Warmup(iterations = 3)
-    @Measurement(iterations = 5)
-    @Fork(2)
+The second dependency is an **annotation processor**: it generates the benchmark harness at
+compile time. Since JDK 23, `javac` no longer runs processors it merely finds on the class path,
+and it doesn't warn you. Turn it back on in the `maven-compiler-plugin` configuration, next to
+`<release>`:
+
+    <proc>full</proc>
+
+With that, `target/test-classes/META-INF/BenchmarkList` appears, `mvn test` still reports 248
+tests and 211 skipped (a benchmark class has no `@Test`, so Surefire ignores it), and the
+benchmarks run (all verified on a scratch copy). To run them:
+
+    mvn -q test-compile dependency:build-classpath -Dmdep.outputFile=target/cp.txt
+    java -cp target/test-classes:target/classes:$(cat target/cp.txt) org.openjdk.jmh.Main -l     # list
+    java -cp target/test-classes:target/classes:$(cat target/cp.txt) org.openjdk.jmh.Main TallyBenchmark
+
+Then run `./scripts/warm-cache.sh` again, so offline builds keep working with the new jars.
+
+Commit the pom change on its own, with every test still green. It's a build change, and nobody
+should have to find it inside a benchmark commit.
+
+## Part three: re-answer doc 14
+
+[Doc 14](14-map-defaults-and-collectors.md) asks at what input size the `groupingBy` counter beats
+the `merge` loop. **Finish doc 14 first.** `WordTally.tallyWithMerge` and `tallyWithGroupingBy`
+throw `UnsupportedOperationException("TODO ...")` until you do, and JMH will report every
+iteration as an error.
+
+The shape, in `src/test/java`, in the same package as `WordTally`:
+
+    @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @State(Scope.Benchmark) @Warmup(iterations = 3) @Measurement(iterations = 5) @Fork(2)
     public class TallyBenchmark {
-
-        @Param({"10", "1000", "100000"})
-        int size;
-
+        @Param({"10", "1000", "100000"}) int size;
         List<String> words;
-
-        @Setup public void setUp() { /* build the input */ }
-
+        @Setup public void setUp() { /* build the input: decide how many distinct words */ }
         @Benchmark public Map<String, Integer> mergeLoop()  { return WordTally.tallyWithMerge(words); }
         @Benchmark public Map<String, Long>    groupingBy() { return WordTally.tallyWithGroupingBy(words); }
     }
 
-Four annotations carry the weight: **`@Warmup`** (solves 1), **returning the result** or using a
-`Blackhole` (solves 2), **`@State`** (solves 3), **`@Fork`** (runs fresh JVMs, so one benchmark
-cannot leave the JIT in a shape that flatters the next).
+Each annotation answers one of the problems above. `@Warmup` handles warmup. **Returning the
+result** handles dead code elimination. `@State` with a non-final field handles constant folding.
+`@Fork(2)` starts fresh JVMs, so one benchmark can't leave the JIT in a shape that flatters the
+next.
 
-### 3. Re-answer stage 14
+Report the crossover, or report that there isn't one in that range. Either is a real answer.
+"The stream is probably fine" isn't one. And say how many distinct words your input had, because
+a map with 10 keys and a map with 100,000 are different benchmarks.
 
-[Doc 14](14-map-defaults-and-collectors.md) asks at what input size `groupingBy` beats the `merge`
-loop. **Answer it with `@Param({"10", "1000", "100000"})` and report the crossover**, or report
-that there isn't one in that range. Either is a real answer. "The stream is probably fine" is not.
+## Part four: the one that doesn't need JMH
 
-### 4. The one that does not need JMH
+[Doc 31](31-runtime-defaults.md) compares collectors on `BlurLoop`, which runs for 15 seconds
+and does whole-program work. **JMH is for microbenchmarks, and that isn't one.** Wall-clock time
+on the whole program, repeated enough times to see the spread, is the right tool there.
 
-[Stage 20](31-runtime-defaults.md) compares garbage collectors on `ForkBlur`, which runs for a
-minute. **JMH is for microbenchmarks, and a one-minute workload is not one.** Wall-clock on a
-whole-program run is the correct tool there, with enough repetitions to see the variance.
-
-Knowing which of the two situations you are in is the actual skill. Reaching for JMH to compare
-collectors is as wrong as reaching for `currentTimeMillis` to compare two one-line methods.
+Knowing which situation you're in is the actual skill. Reaching for JMH to compare collectors is
+as wrong as reaching for `currentTimeMillis` to compare two one-line methods.
 
 ## Write the answers here
 
-1. **The naive benchmark, five runs in one JVM.** Record all five numbers. How big was the warmup
-   effect? _(fill in)_
-2. **Stage 14's crossover**, measured. _(fill in)_
-3. **Go back and re-read your "what got worse" sections for stages 06, 08, 14, 22 and 31.** Which
-   of those claims do you no longer believe? _(fill in)_
+1. **The naive benchmark, five runs in one JVM**, with `sum` printed and without. All ten numbers.
+   How big was the warmup effect, and what did removing `sum` do? _(fill in)_
+2. **Doc 14's crossover**, measured, with the input described. _(fill in)_
+3. **Go back to the timing claims you made in docs 06, 08, 14, 22 and 31.** Which of them do you
+   no longer believe? _(fill in)_
 4. **Which claim was right anyway?** Being wrong about the method and right about the answer is
    worth noticing. _(fill in)_
-5. **The explain-it version.** Somebody shows you a benchmark proving their rewrite is 40% faster.
+5. **The explain-it version.** Someone shows you a benchmark proving their rewrite is 40% faster.
    Name the first three things you ask. _(fill in)_
 
 ## What got worse
 
 - _(fill this in)_
 
-Prompts: JMH makes a measurement take minutes instead of seconds — what does that do to how often
-you measure, and is a worse measurement you actually run better than a good one you do not?
-`@Fork(2)` means a benchmark run is not reproducible on a laptop doing anything else — how would
-you run these in CI, and would you gate a merge on one? When is "it is obviously faster" good
-enough, and how do you tell before you have measured?
+Prompts: JMH makes a measurement take minutes instead of seconds. What does that do to how often
+you measure, and is a worse measurement you actually run better than a good one you don't?
+`<proc>full</proc>` turns on every annotation processor on the class path, not just JMH's: is
+that a risk, and how would you narrow it? `@Fork(2)` on a laptop doing anything else isn't
+reproducible: would you gate a merge on a benchmark in CI?
