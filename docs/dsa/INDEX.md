@@ -13,8 +13,10 @@ Every one of those is a contract failure. **Most of them are in this repo right 
 
 [The modernization track](../modernization/INDEX.md) rewrites old code into current idiom. This one
 does not rewrite anything: it **writes the test that was never there**, and most of the time the
-test fails. Seven of the twelve DSA files in this repo have no test at all, and two of the ones
-that do are green while the code under them is wrong.
+test fails. Of the existing code the reuse table below lists, four files have no test at all
+(`NumberReverse`, `DuplicateNumber`, `StringRecursiveReversal`, `PascalsTriangleRecursive`), and
+three of the ones that do are green while the code under them is wrong (`BinarySearch`,
+`FairWorkLoad`, `CircularList`).
 
 So the convention is inverted. There, deleting `@Disabled` starts a modernization. Here, deleting
 `@Disabled` usually turns a green build red, and *that is the deliverable* — the fix comes after.
@@ -49,24 +51,25 @@ is where it lands on code somebody already shipped, and 12 is the stage to disag
 
 ## Reuse, which is most of the point
 
-This track adds four new exercise classes. Everything else lands on code that has been in the repo
-since 2014:
+This track adds eleven exercise classes with TODOs: one in each of stages 02 to 10, plus `Cell`
+and `Maze` in stage 11. Everything else lands on code that has been in the repo since 2014:
 
 | Existing file | Stage | What it is for |
 | --- | --- | --- |
 | `algorithm/BinarySearch.java` | **05** | Broken and green. Misses 5 of 12 elements in its own fixture. |
 | `algorithm/FairWorkLoad.java` | 06 | Genuinely binary search over an answer space. Its `max()` is also wrong. |
 | `algorithm/NumberReverse.java` | 09 | Silent overflow, no test. |
-| `algorithm/DuplicateNumber.java` | 09 | Overflow in a sum, no test. |
+| `algorithm/DuplicateNumber.java` | 09 | Overflow, no test. Valid input `1..n` plus a duplicate goes wrong from n = 46,341, before the sum overflows. |
 | `algorithm/StringRecursiveReversal.java` | 08 | Recursion depth is the input length. |
 | `algorithm/PascalsTriangleRecursive.java` | 08 | Exponential, and the honest fix is "do nothing". |
 | `algorithm/SumSearch.java` | 04 | Sorts the caller's array. Undocumented mutation. |
 | `CircularList.java`, `algorithm/MyArrayList.java` | 01 | Hand-rolled structures. The lesson is "don't". |
-| `mousemaze/` | 11 | Only `Rules.txt` and two test files with zero `@Test` methods. |
+| `mousemaze/` | 11 | In 2014, only `Rules.txt` and two test files with zero `@Test` methods. |
 | `ProductsOfArrayElementsTest` | 07 | O(n²) by construction. |
 
-Named as toys and given no stage: `FindMiddleIndex`, `PascalsTriangle`,
-`RotateMatrix90DegreeInPlace`. Stage 12 says why.
+Named as toys and given no stage: `PascalsTriangle` and `RotateMatrix90DegreeInPlace`. Stage 12
+says why. (`FindMiddleIndex` used to be on this list. It's now
+[modernization doc 09](../modernization/09-streams-and-optional.md)'s `OptionalInt` exercise.)
 
 Owned by the other track, cross-referenced rather than duplicated: `DecimalToBinary` (broken base 16, not even hex —
 [doc 03](../modernization/03-pattern-matching.md)), `MyArrayList` and `CircularList` as rewrites
