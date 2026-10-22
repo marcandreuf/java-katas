@@ -49,9 +49,9 @@ generators created at the same instant still start in different places. Passing
 millisecond and that anyone can guess. Verified, creating 1,000 generators in a loop and keeping
 each one's first `nextInt()`, three runs:
 
-    clock-seeded:  4 distinct values   (loop took 2.56 ms)
-                   1 distinct value    (0.27 ms)
-                   1 distinct value    (0.24 ms)
+    clock-seeded:  2 distinct values   (loop took 0.87 ms)
+                   1 distinct value    (0.28 ms)
+                   1 distinct value    (0.21 ms)
     new Random():  1000 distinct values, every run
 
 A thousand "random" generators, one sequence. Same seed, same numbers: that's the rule, and
@@ -141,10 +141,12 @@ first: that extraction is what makes this file testable at all.
 **four** in `src/main` (`grep`). And it said `Random` "is synchronized internally". It isn't:
 `Random` keeps its state in an `AtomicLong` and steps it with compare-and-set (`Random.java:296`).
 Only `setSeed` and `nextGaussian` are `synchronized`. Contention is still real: its own javadoc
-warns about it. Eight threads making 10 million `nextInt` calls each took about **25 times as
-long** sharing one `Random` as with one each (verified, timed on a loaded machine, so trust the
-ratio, not the milliseconds). But **none of these three sites shares one**: each thread makes its
-own. So contention isn't the argument here.
+warns about it. Eight threads making 10 million `nextInt` calls each took about **45 times as
+long** sharing one `Random` as with one each (verified, idle 10-core machine, three runs: about
+2,360 ms against 51 ms). But **none of these three sites shares one**: each thread makes its
+own. So contention isn't the argument here. Nor is speed: with one generator per thread,
+`L64X128MixRandom` took 66 ms to `Random`'s 51 (same runs). What the new algorithms buy is more
+state and better statistics, not time.
 
 The argument is the rule. Whoever chooses the seed chooses the delays, and today nobody outside
 `run()` can. [Doc 07](07-classic-concurrency.md) part two, step 1, already asks you to make
