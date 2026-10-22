@@ -1,150 +1,204 @@
 # 26. Scoped values, and structured concurrency as it is now spelled
 
-**Java 25** (scoped values, final) · **preview through 26** (structured concurrency) · stage 15 of
-[the release-ordered track](INDEX.md) · **needs `--release 25` or newer**
+**Java 25** (`ScopedValue`, JEP 506, final) · **preview in 26** (structured concurrency, JEP 525)
+· stage 15 of [the release-ordered track](INDEX.md) · `TenantContext` needs `--release 25` or
+newer; the structured concurrency experiments need `--enable-preview` on JDK 26
 
-## Where it lands
+New code with its tests already written: `TenantContextTest` is `@Disabled` until you begin. Do
+[doc 06](06-virtual-threads.md) first. This doc answers the question that one ends on: *what
+happens to a `ThreadLocal` when there are a million threads?*
 
-New code: **`concurrency/TenantContext.java`**, four TODOs. Do [doc 06](06-virtual-threads.md)
-first — this is the answer to the question it ends on:
+## What this stage is actually about
 
-> *What happens to a `ThreadLocal` when there are a million threads?*
+Five words, defined once:
 
-## Scoped values
+- a **`ThreadLocal`** is one mutable slot per thread. `set()` writes it, `get()` reads it, and the
+  value stays there until somebody calls `remove()` or the thread dies.
+- a **binding** is a value attached to a `ScopedValue` for the duration of one call:
+  `ScopedValue.where(KEY, value).run(body)`. Inside `body`, and in everything `body` calls,
+  `KEY.get()` returns `value`. When `body` returns, the binding is gone. There's no `set()` and no
+  `remove()`.
+- **structured concurrency** means that subtasks started inside a block finish before the block
+  exits, the way a method call returns before its caller carries on.
+- a **`StructuredTaskScope`** is that block: `open(...)`, then `fork(...)` the subtasks, then
+  `join()`, all inside a `try`-with-resources.
+- a **`Joiner`** is the policy you pass to `open(...)`: wait for all of them, or take the first
+  success, or something else. It decides what `join()` returns.
 
-### The problem with `ThreadLocal`
+That gives one rule, and everything below follows from it: **a binding lives exactly as long as
+one call, so only code that provably runs inside that call can see it.** A thread you start
+yourself might outlive the call, so it can't see the binding. A fork of a `StructuredTaskScope`
+can't outlive the call, so it can.
 
-A `ThreadLocal` is a **mutable** map entry per thread, which **lives until someone removes it**,
-and which is **inherited by copying** (`InheritableThreadLocal`). All three properties were
-acceptable when threads were expensive and pooled, and all three became problems when virtual
-threads made a million threads reasonable:
+## The worked example: why `ThreadLocal` had to be replaced
 
-- mutable: anyone can `set()` at any time, so nothing can reason about the value
-- unbounded lifetime: in a pooled world, forgetting `remove()` leaks a request's data into the
-  next request on that thread — a real and recurring security bug
-- copied on inheritance: a million threads inheriting a context means a million copies
+A `ThreadLocal` set by one task, on a pool of one thread (verified):
 
-`ScopedValue` (JEP 506, final in 25) fixes all three by being immutable and bound to a **call**,
-not a thread:
+    ExecutorService pool = Executors.newFixedThreadPool(1);
+    pool.submit(() -> USER.set("request-1-user-alice")).get();
+    pool.submit(() -> USER.get()).get()       // "request-1-user-alice"
 
-    ScopedValue.where(TENANT, "acme").run(() -> ...);     // bound inside, gone after
-    ScopedValue.where(TENANT, "acme").call(() -> ...);    // same, with a return value
+The second task is a different request, and it sees the first request's user. Nobody called
+`remove()`. In a pooled server that's a data leak between requests, and it's a bug that has
+shipped many times. The `ThreadLocal` API makes it possible, because the value lives as long as
+the *thread*, and pooled threads live forever.
 
-**There is no `set()` and no `remove()`.** You cannot mutate a binding, only establish a narrower
-one inside it, and it unwinds automatically. TODO 2 is where that lands: the API shape *is* the
-safety argument.
+Virtual threads change the cost side too (verified on JDK 26):
 
-Note `get()` on an unbound value throws `NoSuchElementException` rather than returning `null` —
-deliberately, so that "nothing is bound" is not indistinguishable from "null is bound". `isBound()`
-is the check.
+    USER.set("acme"); INHERITED.set("acme");          // ThreadLocal, InheritableThreadLocal
+    Thread.ofVirtual().start(...)                      // child sees: null, "acme"
 
-### TODO 4, which is the thing to actually learn
+A virtual thread inherits `InheritableThreadLocal` values just like a platform thread. So a million
+virtual threads started from a request handler each get a copy of the parent's inheritable map,
+and each one can `set()` its own slot to something else at any moment. That's the three
+properties the rule above removes: mutable, as long-lived as the thread, and copied on
+inheritance.
 
-**Predict the answer before you run the test.**
+Three facts about `ScopedValue`, all verified on JDK 26:
 
-    ScopedValue.where(TENANT, "acme").call(() -> {
-        try (var ex = Executors.newVirtualThreadPerTaskExecutor()) {
-            return ex.submit(TenantContext::current).get();     // what does this see?
-        }
-    });
+| Call | Result |
+| --- | --- |
+| `KEY.get()` with nothing bound | `NoSuchElementException: ScopedValue not bound` |
+| `KEY.orElse("dflt")` with nothing bound | `"dflt"` |
+| `ScopedValue.where(KEY, null).run(...)`, then `KEY.isBound()` and `KEY.get()` | `true`, `null` |
 
-It sees **`"none"`**. The binding is not inherited.
+The third row is why `get()` throws instead of returning `null`. `null` is a value you can bind, so
+returning it for "nothing bound" would make the two impossible to tell apart. `isBound()` is the
+question to ask.
 
-Now the same thing through a `StructuredTaskScope`:
+And `ScopedValue` is final in 25: `javac --release 25` compiles it with no flags, and
+`javac --release 24` says `ScopedValue is a preview API and is disabled by default` (both
+verified).
+
+## Part one: `TenantContext`
+
+`concurrency/TenantContext.java` has four TODOs, and `TenantContextTest` has six tests. Delete the
+`@Disabled` and all six error with `UnsupportedOperationException` (verified).
+
+Commits, in this order:
+
+1. **TODO 1, `current()`.** The tenant, or `"none"`. One test goes green:
+   `nothing_is_bound_outside_a_scope`. Use the table above to choose between `isBound()`, `orElse`
+   and a `try/catch`, and say which in the commit message.
+2. **TODOs 2 and 3, `runAs` and `callAs`.** The javadoc names the API, so these are short. The
+   point is the test called `the_binding_is_gone_after_the_body_returns`. Read it, and notice that
+   nothing in your code made it pass. Write down why the absence of `remove()` is the whole safety
+   argument, using the pool example above.
+3. **TODO 4, `tenantInsideAVirtualThread()`.** Before you write it, **predict what the child thread
+   sees and put the prediction in the commit message.** Then write it, run the test, and say
+   whether you were right. The test's javadoc has the answer, so don't read it first.
+
+Once you've run TODO 4, compare it with the same lookup made from a `StructuredTaskScope` fork
+inside the same binding (verified):
 
     ScopedValue.where(TENANT, "acme").call(() -> {
         try (var scope = StructuredTaskScope.open(Joiner.<String>allSuccessfulOrThrow())) {
             scope.fork(TenantContext::current);
             scope.fork(TenantContext::current);
-            return scope.join();                               // [acme, acme]
+            return scope.join();                      // [acme, acme]
         }
     });
 
-**`[acme, acme]`.** Both verified on the JDK in this VM.
+The forks see the binding. If that's different from what TODO 4 gave you, the rule above is the
+explanation, and it has a consequence worth writing down. **`ScopedValue` replaces `ThreadLocal`
+only in code that also uses structured concurrency.** Code that hands work to a plain executor
+still needs another way to pass the context.
 
-The reason is the whole design: a `StructuredTaskScope`'s forks are **guaranteed** to finish
-before the scope's block exits, so they are guaranteed to be inside the binding's lifetime. A task
-submitted to an executor carries no such guarantee — it could outlive the binding — so the JDK
-refuses to pretend it inherits anything.
+## Part two: structured concurrency, as JDK 26 spells it
 
-**This is the single most surprising thing about `ScopedValue`, and it has a consequence worth
-saying out loud: it is a drop-in replacement for `ThreadLocal` only if you also adopt structured
-concurrency.** If you are passing context to a plain executor, `ScopedValue` does not do what you
-want and `ThreadLocal` is still the answer. That is a legitimate "what got worse" line.
+**A correction to the old version:** it said `mvn -Ppreview verify` was how to run this part.
+Nothing in `src/` uses `StructuredTaskScope`, so the preview profile compiles and tests the repo
+(it does, verified) without running any of it. Do these experiments in a single file **outside
+the repo** instead. Source-launch mode takes the preview flag directly:
 
-## Structured concurrency, and the correction to doc 06
+    java --enable-preview --source 26 Scope.java
 
-[Doc 06](06-virtual-threads.md) says structured concurrency is still preview and that
-`ShutdownOnFailure` is not how JDK 25 spells it. **Both still true**, and here is the current
-shape — it is a bigger change than "renamed":
+Without the flags it fails at compile time: `StructuredTaskScope is a preview API and is disabled
+by default` (verified).
 
-    // JDK 21, the version in every tutorial written in 2023
+### Five behaviours to reproduce
+
+Write one small experiment for each row and check you get the same result. All of these were
+verified on JDK 26:
+
+| Experiment | Result |
+| --- | --- |
+| Two forks inside a binding read the `ScopedValue` | `[acme, acme]`, a `List` |
+| One fork throws `IllegalStateException("boom")` under `allSuccessfulOrThrow()` | `StructuredTaskScope$FailedException`, cause `IllegalStateException: boom` |
+| `anySuccessfulOrThrow()`, one fork returns at once, one sleeps 5 s | `"fast"`. The scope closes in about 14 ms, and the sleeper is interrupted |
+| Fork, then close the scope without calling `join()` | `IllegalStateException: Owner did not join after forking` |
+| `open()` outside a binding, then `fork` from inside a new binding | `StructureViolationException: Scoped value bindings have changed` |
+
+The second row adds a **third** wrapper type to the two in
+[doc 15](15-completable-future.md): `ExecutionException` from `Future.get()`, `CompletionException`
+from `join()`, and now `FailedException`. You need `getCause()` for all three. The last row is the
+rule above being enforced: a fork has to see the same bindings its scope was opened in.
+
+### The API changed in every release, and it changed again in 26
+
+    // JDK 21, the version in most tutorials
     try (var scope = new StructuredTaskScope.ShutdownOnFailure()) {
         var a = scope.fork(this::fetchA);
-        var b = scope.fork(this::fetchB);
         scope.join();
         scope.throwIfFailed();
-        return combine(a.get(), b.get());
+        return a.get();
     }
 
-    // JDK 25: a static factory and a Joiner, no subclassing, but join() hands back subtasks
+    // JDK 25: a factory and a Joiner; join() hands back a Stream of subtasks
     try (var scope = StructuredTaskScope.open(Joiner.<String>allSuccessfulOrThrow())) {
         scope.fork(this::fetchA);
         scope.fork(this::fetchB);
-        return scope.join().map(Subtask::get).toList();      // Stream<Subtask<String>>
+        return scope.join().map(Subtask::get).toList();
     }
 
-    // JDK 26: same shape, and join() now hands back the VALUES
+    // JDK 26: the same shape, and join() hands back the values
     try (var scope = StructuredTaskScope.open(Joiner.<String>allSuccessfulOrThrow())) {
         scope.fork(this::fetchA);
         scope.fork(this::fetchB);
-        return scope.join();                                 // List<String>
+        return scope.join();                          // List<String>
     }
 
-The policy moved from a **subclass** to a **`Joiner` parameter**, which is the better design and
-breaks every example on the internet. The five to know, all verified on JDK 26:
-
-| Joiner (JDK 26) | `join()` returns | Behaviour |
-| --- | --- | --- |
-| `allSuccessfulOrThrow()` | `List<T>` | all must succeed; you get the values |
-| `anySuccessfulOrThrow()` | `T` | first success wins, rest cancelled |
-| `awaitAllSuccessfulOrThrow()` | `Void` | all must succeed, results ignored |
-| `awaitAll()` | `Void` | waits for everything; you inspect `subtask.state()` yourself |
-| `allUntil(predicate)` | `List<Subtask<T>>` | your own stopping rule |
-
-**That table is for JDK 26 and it is not the JDK 25 table.** Verified on both:
-`allSuccessfulOrThrow()` changed from handing back a `Stream<Subtask<T>>` to handing back a
-`List<T>`, `anySuccessfulResultOrThrow()` was **renamed** to `anySuccessfulOrThrow()`, and
-`awaitAllSuccessfulOrThrow()` is new. So the JDK 25 code above does not compile on 26:
+Verified with both JDKs installed here: the JDK 21 form fails on 25 (`cannot find symbol`,
+`ShutdownOnFailure`). The JDK 25 form runs on 25 and prints `[a, b]`, and on 26 it fails to
+compile:
 
     error: cannot find symbol
-        return scope.join().map(StructuredTaskScope.Subtask::get).toList();
-                           ^
+        System.out.println(scope.join().map(StructuredTaskScope.Subtask::get).toList());
+                                       ^
+      symbol:   method map(Structured[...]::get)
 
-**This is the point of the document happening to you while you read it.** Doc 06 warned that the
-JDK 21 `ShutdownOnFailure` shape was gone by 25; the 25 shape is now gone by 26. Each change has
-been a simplification — subclass to parameter, subtasks to values — and each one invalidates
-every example written against the version before it.
+The factories, from `javap` on each JDK:
 
-A failure surfaces as `StructuredTaskScope.FailedException` with the original as its cause —
-*not* `ExecutionException` or `CompletionException`, so that is a **third** wrapper type to add to
-the two in [doc 15](15-completable-future.md).
+| Joiner | `join()` returns on 25 | `join()` returns on 26 |
+| --- | --- | --- |
+| `allSuccessfulOrThrow()` | `Stream<Subtask<T>>` | `List<T>` |
+| `anySuccessfulResultOrThrow()` on 25, `anySuccessfulOrThrow()` on 26 | `T` | `T` |
+| `awaitAllSuccessfulOrThrow()` | `Void` | `Void` |
+| `awaitAll()` | `Void` | `Void` |
+| `allUntil(predicate)` | `Stream<Subtask<T>>` | `List<Subtask<T>>` |
 
-### Running it
+**Two corrections to the old version.** It said `awaitAllSuccessfulOrThrow()` was new in 26, but
+it's already in 25. And it left out `allUntil`, which also changed from a `Stream` to a `List`.
+`open(joiner, config)` changed too: it took a `Function` on 25 and takes a `UnaryOperator` on 26.
 
-It is preview, so it is not in the default build. `pom.xml` now has a profile:
+**And the preview count:** the old version said "seven previews through Java 26". By its own list,
+that's six: JEP 453, 462, 480, 499, 505 and 525, one per release from 21 to 26. The two
+incubator rounds before them (JEP 428 and 437, in 19 and 20) and the seventh preview in 27 (JEP 533,
+listed in [the index](INDEX.md)) are **not verified**, because no JDK 19, 20 or 27 is installed
+here.
 
-    mvn -Ppreview verify
+### Why preview stays out of the default build
 
-**Do not enable preview by default**, and know why: a class compiled with `--enable-preview`
-records the exact JDK version it was built with and **refuses to load on any other**. That is
-deliberate — it makes preview features impossible to ship by accident.
+A class compiled with `--enable-preview` records the exact JDK it was compiled for. The JDK 25
+class from above, run on 26 (verified):
 
-**Two incubator rounds and then seven previews**: JEP 428 and 437 incubated it in Java 19 and
-20, then JEP 453, 462, 480, 499, 505 and 525 previewed it once per release through Java 26, and it
-previews again in 27. [Stage 22](INDEX.md) is about what that count means. It is not the same signal as String
-templates, because the API is converging rather than being abandoned, but it is not nothing
-either: anything you write against it today needs rewriting when it lands.
+    java.lang.UnsupportedClassVersionError: Old25 (class file version 69.65535) was compiled with
+    preview features that are unsupported. This version of the Java Runtime only recognizes
+    preview features for class file version 70.65535
+
+`65535` is the minor version that marks a preview class. That's deliberate: preview code can't be
+shipped by accident, because it won't run on the next JDK. It's why `pom.xml` keeps preview in a
+profile.
 
 ## What got worse
 
@@ -152,8 +206,9 @@ either: anything you write against it today needs rewriting when it lands.
 - _(fill this in)_
 - _(fill this in)_
 
-Prompts: if `ScopedValue` only inherits through structured concurrency, what is your migration
-path in a codebase built on thread pools and `ThreadLocal`? What does a framework like Spring do
-with request context in a virtual-thread world, and did it have to choose? `Joiner` instead of a
-subclass is a better design — what did it cost the people who adopted the preview in 2023, and
-does that change what you would advise someone about adopting a preview now?
+Prompts: if `ScopedValue` only reaches forks of a `StructuredTaskScope`, what's the migration path
+for a codebase built on thread pools and `ThreadLocal`, and which of the two do you change first?
+What does a framework do with request context in a virtual-thread world, and does it have to
+choose? A `Joiner` is a better design than a subclass, and it broke every example written for
+21, and then 26 broke the 25 ones too. What does that tell you about adopting a preview API
+today?
