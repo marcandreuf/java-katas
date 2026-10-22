@@ -1,104 +1,168 @@
 # 19. Randomness and numerics
 
-**Java 17, 21** · stage 8 of [the release-ordered track](INDEX.md) · `--release 21`, no build
-change
+**Java 17** (`RandomGenerator`, JEP 356) · **Java 21** (`Math.clamp`, `StringBuilder.repeat`) ·
+stage 8 of [the release-ordered track](INDEX.md) · compiles at `--release 21`, no build change
 
 > **No safety net:** `Consumer`, `Producer`, `RandomFileLines`, `Safelock` have no tests. Write
 > them first, in a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says
-> how, and why the order matters.
+> how, and why the order matters. If you've done [doc 07](07-classic-concurrency.md) and
+> [doc 09](09-streams-and-optional.md), `Producer`, `Consumer` and `RandomFileLines` have tests
+> already, and this doc builds on them.
 
-## Where it lands
+## What this stage is actually about
 
-Five `new Random()` sites, and one of them is a bug:
+Five words, defined once:
 
-| File | What is there |
-| --- | --- |
-| `collections/RandomFileLines.java:32` | `new Random(System.currentTimeMillis())` — **the bug** |
-| `concurrency/guardedLock/Producer.java:25` | `new Random()` inside `run()` |
-| `concurrency/guardedLock/Consumer.java:20` | `new Random()` inside `run()` |
-| `concurrency/Safelock.java:79` | `new Random()` inside `run()` |
+- a **pseudo-random generator** is a deterministic machine: some internal **state**, and a
+  function that turns the state into a number and moves it on. Nothing about it is random except
+  where it started.
+- the **seed** is that starting state. The same seed gives the same sequence, every time, on every
+  machine.
+- **state bits** is how big the state is. `java.util.Random` has 48 (verified, `stateBits()`
+  below), so it can only ever be in 2^48 different places.
+- **`RandomGenerator`** (Java 17) is an **interface** over every generator in the JDK, including
+  the old ones: `Random`, `SplittableRandom` and `SecureRandom` all implement it (verified).
+- **`Math.clamp(value, min, max)`** (Java 21) forces a value into a range, and refuses a range
+  where `min > max`.
 
-New code: **`random/Rolls.java`**, four TODOs — and TODO 4 has nothing to implement.
+That gives one rule, and everything below follows from it: **a generator's output is a function of
+its seed, so whoever chooses the seed chooses the numbers.** Choose it from the clock and the clock
+chooses them. Choose it in a test and the test does. Leave it to the JDK and nobody can predict it,
+which is what you want in production.
 
-## The bug, first
+## The worked example: seeding from the clock
+
+`collections/RandomFileLines.java:32`, from 2014:
 
     Random rline = new Random(System.currentTimeMillis());
 
-**Seeding from the clock does not add entropy. It removes it.** `new Random()` with no argument
-already seeds itself from a source designed for the job — since Java 8 that is a per-instance
-`seedUniquifier` mixed with `System.nanoTime()`, specifically so that two instances created in
-quick succession diverge. Passing `currentTimeMillis()` *overrides* that with a value that has
-millisecond resolution and is trivially guessable.
+It looks like extra care. It's the opposite. Here is what `new Random()` with **no** argument does
+in JDK 26 (`Random.java:310-311` in the JDK's `src.zip`):
 
-`RollsTest.same_clock_seed_gives_the_same_sequence` is TODO 4 and it passes as written:
+    public Random() {
+        this(seedUniquifier() ^ System.nanoTime());
+    }
 
-    new Random(1760000000000L).ints(10, 1, 7)   ->  [2, 3, 6, 1, 3, ...]
-    new Random(1760000000000L).ints(10, 1, 7)   ->  [2, 3, 6, 1, 3, ...]    identical
+`seedUniquifier()` is a shared counter, stepped with a compare-and-set on every call, so two
+generators created at the same instant still start in different places. Passing
+`currentTimeMillis()` throws that away and replaces it with a number that changes once a
+millisecond and that anyone can guess. Verified, creating 1,000 generators in a loop and keeping
+each one's first `nextInt()`, three runs:
 
-On a machine that can run that constructor twice inside one millisecond — which is every machine —
-two "random" generators produce **the same sequence**. `RandomFileLines` creates its generator
-inside a method, so a caller in a loop gets the same "random" lines every time. Nothing tested it.
+    clock-seeded:  4 distinct values   (loop took 2.56 ms)
+                   1 distinct value    (0.27 ms)
+                   1 distinct value    (0.24 ms)
+    new Random():  1000 distinct values, every run
 
-Fix it by deleting the argument. That is the entire fix, and the lesson is that the shorter call
-was always the better one.
+A thousand "random" generators, one sequence. Same seed, same numbers: that's the rule, and
+`RollsTest.same_clock_seed_gives_the_same_sequence` (TODO 4) is it written as a test. Seed
+`1760000000000L` gives `[2, 3, 6, 1, 3, 2, 1, 2, 3, 6]` twice (verified).
 
-## The exercise
+**A correction to the old version:** it said a caller of `RandomFileLines` "in a loop gets the
+same random lines every time". Nothing calls it in a loop. `printRandomLines` is private, `main`
+calls it once, and it makes one generator for all five lines, so a single run is fine. The bug is
+**latent**: two runs started in the same millisecond print the same lines, and the first caller
+who puts it in a loop gets the result above. Nothing tests it, because nothing could: the seed is
+chosen inside the method.
 
-### `RandomGenerator`, and why it made randomness testable
+## Part one: `random/Rolls.java`, four TODOs
 
-TODO 1 and 2. JEP 356 (Java 17) added an **interface** where there had only ever been a class:
+New code. Delete the `@Disabled` in `RollsTest`, and **7 tests run: 6 fail, and TODO 4's passes**
+(verified, on a scratch copy). TODO 4 has nothing to implement. It's the worked example above.
 
-    RandomGenerator g = RandomGeneratorFactory.of("L64X128MixRandom").create(42L);   // seeded
-    RandomGenerator g = RandomGenerator.of("L64X128MixRandom");                       // unseeded
-    List<Integer> rolls = g.ints(count, 1, 7).boxed().toList();
+Facts for TODOs 1 and 2, all verified on JDK 26:
 
-Three things this buys that `java.util.Random` could not:
+- **Two ways to get an `L64X128MixRandom`, and only one is testable.**
+  `RandomGeneratorFactory.of(name).create(seed)` is seeded. `RandomGenerator.of(name)` isn't:
+  called twice, it gave `[4, 1, 1, 2, 5]` and `[1, 2, 4, 1, 3]`. `RandomGenerator.getDefault()`
+  is `L32X64MixRandom`.
+- **What your JDK has**: `RandomGeneratorFactory.all()` lists 13 algorithms. Abridged:
 
-1. **It is an interface**, so a method that takes a `RandomGenerator` can be handed a seeded one
-   in a test and the default in production. This is the same move as the `Clock` parameter in
-   [doc 13](13-java-time.md), and it is the same payoff: `RollsTest` asserts reproducibility with
-   no flake and no retry loop.
-2. **A choice of algorithm.** `java.util.Random` is a 48-bit LCG from 1995 — statistically poor
-   and only 2^48 states. `L64X128MixRandom` and the Xoshiro/Xoroshiro family are better and
-   faster. `RandomGeneratorFactory.all()` enumerates what your JDK has.
-3. **Splittable and jumpable generators**, which is how you get independent streams per thread
-   without sharing one contended generator. `Random` is synchronized internally; under contention
-   that is a real cost, and `ThreadLocalRandom` was the 2011 workaround that this API generalises.
+  | Name | Group | State bits | Splittable | Jumpable |
+  | --- | --- | --- | --- | --- |
+  | `Random` | Legacy | 48 | no | no |
+  | `SplittableRandom` | Legacy | 64 | yes | no |
+  | `L32X64MixRandom` | LXM | 96 | yes | no |
+  | `L64X128MixRandom` | LXM | 192 | yes | no |
+  | `L128X1024MixRandom` | LXM | 1152 | yes | no |
+  | `Xoshiro256PlusPlus` | Xoshiro | 256 | no | yes |
 
-**Note the test asserts equality between two seeded runs, not fixed expected values.** Pinning
-`[1, 2, 1, 1, 4]` would be testing the algorithm rather than your code, and would break the day
-you changed the algorithm name — which is a thing you are meant to be free to do.
+  **Splittable** means `split()` gives you a new, statistically independent generator, which is
+  how you give each thread or task its own. **Jumpable** means it can skip ahead 2^64 or more
+  steps at once, which does the same job differently. `Random` does neither.
+- **Why `RollsTest` asserts equality between two runs, not fixed values.** With seed 42,
+  `L64X128MixRandom` rolls `[1, 2, 1, 1, 4]` and `Random` rolls `[3, 4, 1, 3, 1]` (verified). A test
+  that pinned the first list would be testing the algorithm, and it would break the day you
+  changed the algorithm's name, which is the thing this API exists to let you do.
 
-### `Math.clamp`
+For TODO 3, `Math.clamp`. Write it with `Math.min` and `Math.max` first, as the TODO says, and run
+the test. Then these, all verified:
 
-TODO 3. Write it with `Math.min`/`Math.max` first:
+    Math.clamp(150, 0, 100)                // 100
+    Math.clamp(-7, 0, 100)                 // 0
+    Math.max(0, Math.min(3, -1))           // 0:  min/max with an inverted range answers anyway
+    Math.clamp(3, 0, -1)                   // IllegalArgumentException: 0 > -1
 
-    Math.max(0, Math.min(value, size - 1))      // works, and reads as a puzzle
-    Math.clamp(value, 0, size - 1)              // Java 21
+**Brevity isn't what `clamp` bought you.** An inverted range is what you get when the collection
+is empty, and the `min`/`max` version answers with an index into it. `clamp` refuses.
+`clamp_rejects_an_empty_range` is that case, and it fails until you use `clamp`.
 
-**Brevity is not what `clamp` bought you.** The nested version silently returns nonsense when the
-bounds are inverted — `max(9, min(3, 0))` is `9`, which is neither in range nor an error.
-`Math.clamp` throws `IllegalArgumentException` when `min > max`. The test pins that. A function
-that refuses impossible input beats one that invents an answer, and that is the general lesson
-worth taking out of a two-line method.
+And one the old version didn't mention: `clamp(long, int, int)` **returns `int`**, so it clamps
+before it narrows. Take a `long` of 3,000,000,000 and a range of 0 to 100:
+`Math.max(0, Math.min((int) v, 100))` gives **0**, because the cast wrapped it to -1294967296
+first. `Math.clamp(v, 0, 100)` gives **100** (verified). The four overloads are `int` (from
+`long`), `long`, `double` and `float`.
 
-`StringBuilder.repeat` (21) is the other small one; `String.repeat` has been there since 11 and
+`StringBuilder.repeat` is the other small Java 21 addition: `new StringBuilder("ab").repeat("-",
+3).repeat('x', 2)` is `ab---xx` (verified). `String.repeat` has been there since 11, and
 [doc 18](18-files-strings-and-charsets.md) uses it.
 
-### Then fix the other three
+## Part two: `RandomFileLines`, the clock seed
 
-`Producer:25`, `Consumer:20` and `Safelock:79` all construct a `Random` inside `run()`. Converting
-them to `RandomGenerator` is mechanical. **The interesting question is whether to pass it in**, and
-the answer tells you whether those classes were ever testable. They were not —
-[doc 07](07-classic-concurrency.md) is where that gets fixed, and this is a hint about how.
+If you've done [doc 09](09-streams-and-optional.md), the line selection already takes a `Random`
+as a parameter, and `main` is the only place that makes one. If not, do doc 09's part two step 1
+first: that extraction is what makes this file testable at all.
+
+1. **Fix the seed**, alone: `new Random()`, with no argument. **No test can show this**: "less
+   guessable" isn't something an assertion can check, and the seeded tests from doc 09 don't
+   change. Put the loop result above in the commit message as the evidence. This is the rare
+   behaviour change that you justify in writing rather than in a test, and you should be able
+   to say why.
+2. **Widen the parameter** from `Random` to `RandomGenerator`, as its own commit. Every caller
+   still compiles, because `Random` implements it (verified), and the tests from doc 09 stay
+   green without being edited. That's how you know the commit is a refactor.
+
+## Part three: `Producer`, `Consumer`, `Safelock`
+
+`guardedLock/Producer.java:25`, `guardedLock/Consumer.java:20` and `Safelock.java:79` each make a
+`new Random()` inside `run()`, to sleep for a random time.
+
+**A correction to the old version, two of them.** It said "five `new Random()` sites"; there are
+**four** in `src/main` (`grep`). And it said `Random` "is synchronized internally". It isn't:
+`Random` keeps its state in an `AtomicLong` and steps it with compare-and-set (`Random.java:296`).
+Only `setSeed` and `nextGaussian` are `synchronized`. Contention is still real: its own javadoc
+warns about it. Eight threads making 10 million `nextInt` calls each took about **25 times as
+long** sharing one `Random` as with one each (verified, timed on a loaded machine, so trust the
+ratio, not the milliseconds). But **none of these three sites shares one**: each thread makes its
+own. So contention isn't the argument here.
+
+The argument is the rule. Whoever chooses the seed chooses the delays, and today nobody outside
+`run()` can. [Doc 07](07-classic-concurrency.md) part two, step 1, already asks you to make
+`Producer` and `Consumer`'s delay injectable. If you chose a `Random` there, widen it to
+`RandomGenerator` now, as for `RandomFileLines`. If you chose a maximum delay or a `Sleeper`, say
+in writing whether a generator would have been better, and leave it alone.
+
+`Safelock` is the one to think about rather than change. Its `run()` is a `for (;;)` that can't be
+stopped ([doc 08](08-memory-model.md) part three), so a seeded generator wouldn't make it
+testable: there's nothing to assert on until it can stop. Write down which has to come first.
 
 ## What got worse
 
 - _(fill this in)_
 - _(fill this in)_
 
-Prompts: none of these generators is cryptographically secure — what is the question that tells
-you that you need `SecureRandom` instead, and what does it cost? If a `RandomGenerator` parameter
-makes a class testable, what does it do to every call site that did not want to care? When is a
-fixed seed in a test a lie, in the sense that it makes the test pass for a reason the production
-code will not reproduce?
+Prompts: none of these generators is cryptographically secure (`Random`'s javadoc says so): what
+question tells you that you need `SecureRandom`, and what does it cost? If a `RandomGenerator`
+parameter makes a class testable, what does it do to every call site that didn't want to care?
+When is a fixed seed in a test a lie, in the sense that it makes the test pass for a reason the
+production code won't reproduce?
