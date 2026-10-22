@@ -1,67 +1,121 @@
 # 01. Which collection, and what it costs
 
-**Stage 1 of [the DSA track](INDEX.md)** · runnable, no tests — the deliverable is measurements
-and written answers
+**Stage 1 of [the DSA track](INDEX.md)** · runnable, no tests, no code committed: the deliverable
+is measurements and written answers · every number below measured on JDK 26
 
 ## Where it lands
 
 **`CircularList.java`** (112 lines, a hand-rolled sorted circular linked list) and
-**`algorithm/MyArrayList.java`** (28 lines, an unfinished growable array). Both are
-reimplementations of something the JDK already has, and
-[modernization doc 10](../modernization/10-sequenced-collections-and-httpclient.md) owns rewriting
-them. **This stage does not rewrite them.** It asks what the JDK versions actually cost, because
-that is the decision you make weekly and these two files are the decision nobody made.
+**`algorithm/MyArrayList.java`** (28 lines, an unfinished growable array) (both verified, `wc -l`).
+Both reimplement something the JDK already has, and
+[modernization doc 10](../modernization/10-sequenced-collections-and-httpclient.md) owns fixing
+and replacing them. **This stage does not touch them.** It asks what the JDK versions actually
+cost, because that's a decision you make every week, and these two files are what it looks like
+when nobody made it.
+
+## What this stage is actually about
+
+Four words, defined once:
+
+- **Big-O** describes how the number of steps grows with the input size *n*. O(1) means the step
+  count doesn't grow; O(n) means it grows in proportion. It says nothing about how long one step
+  takes.
+- the **constant** is how long one step takes. Big-O drops it on purpose.
+- the **memory hierarchy** is why the constant varies so much: reading the next element of an array
+  is nearly free, because the CPU has already fetched it into cache. Following a pointer to
+  wherever a linked-list node happens to live can be a cache miss, which is commonly quoted as
+  around a hundred times slower (a textbook figure, not measured here).
+- a **contract** is what a collection promises: whether it keeps order, whether it allows `null`,
+  what it considers a duplicate. [Stage 02](02-contract-matrix.md) is about contracts.
+
+That gives one rule, and everything below follows from it: **Big-O ranks algorithms; it does not
+predict wall-clock time.** It leaves out the constant and the memory hierarchy, and on modern
+hardware those are the part that changed. So you choose a collection by its contract, and then
+you measure.
+
+## The worked example: the one race `LinkedList` does win
+
+Remove every other element from a 100,000-element list, through its iterator (verified, two runs):
+
+    LinkedList, iterator.remove()     13.6 ms,  1.4 ms
+    ArrayList,  iterator.remove()      367 ms,  369 ms     ~270x slower than the second LinkedList run
+    ArrayList,  removeIf(...)         10.3 ms,  1.1 ms
+
+That's the textbook case, and it's real: removing at the iterator's position is O(1) for a linked
+list, and for an array it shifts every element after it, so 50,000 removals cost O(n²). **The old
+version of this doc said "there is no operation where `LinkedList` is the right answer." The
+first two rows say otherwise.**
+
+The third row is why the advice survives anyway. `removeIf` (Java 8) compacts the array in one
+pass, O(n), and it's as fast as the linked list. The loop that made `LinkedList` win is a loop
+nobody needs to write any more. That's what this stage keeps finding: the complexity argument is
+correct, and the operation it's about can usually be avoided.
 
 ## The claim this stage exists to kill
 
 > "`LinkedList` is better for insertion because it is O(1)."
 
-Measured, inserting at `size()/2` a hundred thousand times:
+Inserting at `size()/2`, 100,000 times (verified, three runs, ratios rather than absolute times
+because the machine was busy):
 
 | | Time |
 | --- | --- |
-| `LinkedList` | **5,204 ms** |
-| `ArrayList` | **364 ms** |
+| `LinkedList` | 9.6 to 14.8 s |
+| `ArrayList` | 0.37 to 0.51 s |
 
-**14x worse at the one operation it supposedly wins.** The O(1) is real and irrelevant: getting
-*to* the middle is O(n) of dependent pointer loads, each one a potential cache miss, while
-`ArrayList` does a single `System.arraycopy` that the CPU prefetches perfectly.
+**20 to 40 times slower, at the one operation it's supposed to win.** (The old version of this
+doc measured 14x on a quiet machine. The ratio moves with load; it was never close.) The O(1)
+insertion is real and irrelevant here: getting *to* the middle is O(n) pointer-following, each step
+a possible cache miss, while `ArrayList` does a single `System.arraycopy` over contiguous memory.
+Both are O(n) per insert. The constants are what differ.
 
-This is the shape of the whole stage. **Big-O ranks algorithms; it does not predict wall-clock**,
-because it omits the constant and the memory hierarchy, and on modern hardware those are the
-part that moved.
+The worked example and this claim aren't in tension. `LinkedList` wins when you're already *at*
+the position, through an iterator. It loses when it has to walk there. Mid-list insertion by index
+always walks.
 
 ## Run these yourself
 
-Do not take the table above on trust —
-[doc 34](../modernization/34-measuring-it-properly.md) is about exactly that, and everything here
-is a whole-program measurement rather than a microbenchmark, so wall-clock is the right tool.
+Don't take the numbers above on trust. [Doc 34](../modernization/34-measuring-it-properly.md) is
+about why. These are whole-program measurements, not microbenchmarks, so wall-clock time is the
+right tool. A single-file program (`java Probe.java`) or `jshell` both work.
 
-    jshell
-    jshell> var al = new java.util.ArrayList<Integer>(); var ll = new java.util.LinkedList<Integer>();
+1. **Mid-list insertion**, `ArrayList` vs `LinkedList`, 100k iterations. Then halve and double
+   the count, and see which one grows faster.
+2. **`ArrayList` growth.** It grows by **1.5x**, not 2x (`newCapacity = old + old >> 1` in the JDK
+   source). Work out how many reallocations it takes to reach a million elements from the default
+   capacity of 10, and how many elements get copied along the way. Then measure whether
+   `new ArrayList<>(1_000_000)` is faster. (Verified here: pre-sizing was faster on every run,
+   by 1.5x to 4x, with a lot of noise. Most of the time goes into boxing a million `Integer`s,
+   which pre-sizing doesn't save. Knowing that is the point.)
+3. **`PriorityQueue` iteration order.** Add `5, 1, 3` and iterate it. You get `[1, 5, 3]`
+   (verified): **not sorted.** It's a binary heap, so only `peek()` is guaranteed to be the
+   smallest. And `toString()` shows heap order, which looks sorted often enough to fool a test:
+   `new PriorityQueue<>(List.of(5, 1, 3, 4, 2))` prints `[1, 2, 3, 4, 5]` (verified). The only
+   ordered traversal is repeated `poll()`, which empties the queue.
+4. **`HashMap` treeification.** The folklore is "eight collisions make a tree". That's wrong twice:
+   the check fires when the **ninth** node is added to a bucket, and while the table has fewer
+   than 64 slots, `treeifyBin` **resizes the table instead of building a tree**. With keys that
+   all share one hash code (verified, by looking at the bucket's node class):
 
-1. **Mid-list insertion**, `ArrayList` vs `LinkedList`, 100k iterations.
-2. **`ArrayList` growth.** It grows by **1.5x**, not 2x. Work out how many reallocations and
-   copies it takes to reach a million elements from the default capacity of 10, then measure
-   whether `new ArrayList<>(1_000_000)` is actually faster. The answer is less dramatic than the
-   reallocation count suggests, and knowing why is the point.
-3. **`PriorityQueue` iteration order.** Add `5, 1, 3` and iterate it. **It is not sorted.** It is a
-   binary heap, so only `peek()` is ordered; `toString()` shows you heap order and looks sorted
-   often enough to fool a test. The only ordered traversal is repeated `poll()`, which empties it.
-4. **`HashMap` treeification.** The folklore is "eight collisions makes a tree". It is wrong twice:
-   the check fires on the **ninth** node, and under a table capacity of 64 `treeifyBin` **resizes
-   instead of treeifying**. Measured with constant-hash keys, a default `HashMap` needs **eleven**
-   colliding keys before a tree appears. Pre-sized to 64 it trees at the ninth.
-   [Stage 03](03-equals-and-hashcode.md) is about why that matters far more than it sounds.
+   | | First tree appears at | Table size then |
+   | --- | --- | --- |
+   | `new HashMap<>()` | key **11** | 64 |
+   | `new HashMap<>(64)` | key **9** | 64 |
+
+   You can't see the bucket's node class through the public API. Reading `HashMap.table` by
+   reflection needs `--add-opens java.base/java.util=ALL-UNNAMED` on the `java` command.
+   [Stage 03](03-equals-and-hashcode.md) is about why treeification matters far more than it
+   sounds.
 
 ## The decision table worth memorising
 
-Not complexities — **contracts**. [Stage 02](02-contract-matrix.md) tests these.
+Not complexities: **contracts**. [Stage 02](02-contract-matrix.md) tests the `null` column of
+these.
 
 | Need | Reach for | Not |
 | --- | --- | --- |
-| Indexed access, append, iterate | `ArrayList` | `LinkedList`, ever |
-| Queue or stack | `ArrayDeque` | `LinkedList`, `Stack` (it extends `Vector`, synchronised) |
+| Indexed access, append, iterate | `ArrayList` | `LinkedList` |
+| Queue or stack | `ArrayDeque` | `LinkedList`; `Stack` (it extends `Vector`, so every call takes a lock) (verified: `Stack.class.getSuperclass()` is `Vector`) |
 | Key lookup | `HashMap` | anything hand-rolled |
 | Keys in sorted order, or range queries | `TreeMap` / `NavigableMap` | sorting a list repeatedly |
 | Insertion order preserved | `LinkedHashMap` | `HashMap` plus a list |
@@ -69,28 +123,36 @@ Not complexities — **contracts**. [Stage 02](02-contract-matrix.md) tests thes
 | "Smallest first", repeatedly | `PriorityQueue` | re-sorting |
 | Shared across threads | `ConcurrentHashMap` | `HashMap` plus `synchronized` |
 
-`LinkedList` has no row. **There is no operation where it is the right answer** — it remains in
-the JDK for compatibility, and the one thing it offers that `ArrayDeque` does not is the ability to
-hold `null`, which [stage 02](02-contract-matrix.md) shows is a trap rather than a feature.
+`LinkedList` has no row. That's a judgment, not a theorem: the worked example shows the one
+operation it does win, and `removeIf` covers that. The other thing it offers that `ArrayDeque`
+doesn't is that it holds `null` (verified: `ArrayDeque.add(null)` throws
+`NullPointerException`). [Stage 02](02-contract-matrix.md) shows why that's a trap rather than a
+feature: a `LinkedList` holding `null` returns `null` from `poll()` both when it hands you the
+`null` and when it's empty (verified).
 
 ## Write the answers here
 
-1. **Your own mid-list insertion numbers.** Did you reproduce the 14x, and at what size did
+1. **Your own mid-list insertion numbers.** What ratio did you get, and at what size did
    `LinkedList` stop being merely slower and become unusable? _(fill in)_
-2. **`ArrayList` pre-sizing**: how much did it actually save, and would you bother? _(fill in)_
+2. **`ArrayList` pre-sizing**: your reallocation count, your copy count, how much pre-sizing
+   actually saved, and would you bother? _(fill in)_
 3. **`PriorityQueue`**: write the test that would catch someone assuming iteration is sorted.
+   Make sure your test data isn't one of the inputs whose heap order happens to look sorted.
    _(fill in)_
 4. **`CircularList` is 112 lines.** Which JDK type replaces it, how many lines does the
-   replacement take, and what did the hand-rolled version provide that the replacement does not?
-   (There is an honest answer, and it is not "nothing".) _(fill in)_
-5. **The explain-it version.** _"Why not `LinkedList`?"_ — in three sentences, without saying
-   "cache". _(fill in)_
+   replacement take, and what did the hand-rolled version provide that the replacement doesn't?
+   (There's an honest answer, and it isn't "nothing". [Modernization doc
+   10](../modernization/10-sequenced-collections-and-httpclient.md) part one asks whether anything
+   uses it.) _(fill in)_
+5. **The explain-it version.** _"Why not `LinkedList`?"_ in three sentences, without saying
+   "cache", and covering the case where it does win. _(fill in)_
 
 ## What got worse
 
 - _(fill this in)_
 
-Prompts: every row above is a decision that is expensive to reverse once a type is in a public
-signature — which of them would you hide behind an interface, and which is over-engineering? When
-is a plain array the right answer over any collection? `ArrayList` grows by 1.5x and never shrinks
-— what does that do to a long-lived list that was briefly huge?
+Prompts: every row in the table is a decision that's expensive to reverse once the type is in a
+public signature. Which of them would you hide behind an interface, and when is that
+over-engineering? When is a plain array the right answer over any collection? `ArrayList` grows by
+1.5x and never shrinks on its own: what does that do to a long-lived list that was briefly huge,
+and which method fixes it?
