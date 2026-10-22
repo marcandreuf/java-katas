@@ -15,7 +15,7 @@ import java.time.ZonedDateTime;
  *     grep -rn --include='*.java' 'java.time' src     -> nothing
  *
  * What there is instead is long arithmetic on System.currentTimeMillis(), in
- * SimpleThreads:38,46 and ForkBlur:143-145. Those are the rewrite targets; this class is the
+ * SimpleThreads:38,46 and ForkBlur:115-117. Those are the rewrite targets; this class is the
  * place to learn the types first. See docs/modernization/13-java-time.md.
  *
  * TODO 1: implement sameTimeTomorrow(). "Same wall-clock time, one calendar day later."
