@@ -44,7 +44,7 @@ versions without an executor go to the common pool, and the common pool is small
 every parallel stream in the JVM.
 
 Fill it with blocking work and watch something unrelated wait. Nine `runAsync` tasks that each
-sleep for 2 s, then one `supplyAsync(() -> 1).join()` (verified, timed under load):
+sleep for 2 s, then one `supplyAsync(() -> 1).join()` (verified):
 
     an unrelated supplyAsync behind 9 blockers waited 1900 ms
 

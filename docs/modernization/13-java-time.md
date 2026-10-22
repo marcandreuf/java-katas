@@ -106,12 +106,12 @@ four seconds in real time", and that `Clock.fixed` is the fix. Neither is right,
 the lesson of this part:
 
 - **It's already fast to run.** The timeout comes from `args[0]` in seconds, and the default is
-  one hour. `SimpleThreads 0` times out after one `join(1000)`: **1.06 s** in total (verified).
+  one hour. `SimpleThreads 0` times out after one `join(1000)`: **1.04 s** in total (verified).
   The message thread finishes on its own after 16 s (four `sleep(4000)`s).
 - **`Clock.fixed` breaks it.** I extracted the loop into a method taking a `Clock` and a patience
   of 5 s, in a scratch copy. With a fixed clock, elapsed time is always zero, so it never times
-  out: **16,003 ms** (verified). With a fake clock that jumps an hour every time it is read, it
-  times out on the first check, but still after **1,002 ms** (verified), because
+  out: **16,004 ms** (verified). With a fake clock that jumps an hour every time it is read, it
+  times out on the first check, but still after **1,000 ms** (verified), because
   `t.join(1000)` waits on the real clock whatever `Clock` says.
 
 So the clock is **one of two** real-time dependencies in that loop. The other is the `join(1000)`
@@ -151,9 +151,9 @@ in. Try it and you get `UnsupportedTemporalTypeException: Unsupported field: Yea
 Then answer the question, because it's the most-asked `java.time` interview question: **why is a
 shared `static final DateTimeFormatter` safe, when a shared `SimpleDateFormat` wasn't?** Here's
 the evidence. Eight threads, each doing 20,000 parse-then-format round trips on one shared
-instance of each (verified, three runs, timed under load):
+instance of each (verified, three runs):
 
-    SimpleDateFormat:   ~140,000 of 160,000 wrong, plus 280 to 4,000 exceptions per run
+    SimpleDateFormat:   144,000 to 156,000 of 160,000 wrong, plus 370 to 2,300 exceptions per run
     DateTimeFormatter:  0 wrong
 
 **A correction to the old version:** it said the race produces "silently wrong dates under load
