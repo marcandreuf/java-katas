@@ -1,72 +1,121 @@
 # 28. Flexible constructor bodies
 
-**Java 25** · stage 17 of [the release-ordered track](INDEX.md) · **needs `--release 25` or newer**
+**Java 25** (JEP 513, final) · stage 17 of [the release-ordered track](INDEX.md) · needs
+`--release 25` or newer
 
-## Where it lands
+New code with its tests already written: **`modern/Validated.java`**, three TODOs, and
+`ValidatedTest`, which is `@Disabled` until you begin. This is the smallest stage in the track:
+one rule changed. It's here because that rule had been there since Java 1.0.
 
-New code: **`modern/Validated.java`**, three TODOs. The smallest stage in the track — one rule
-changed — and it is here because the rule it changed had been there since Java 1.0.
+## What this stage is actually about
 
-## The rule that changed
+Five words, defined once:
 
-Until Java 25, `super(...)` or `this(...)` had to be the **first statement** in a constructor.
-JEP 513 allows statements before it, provided they do not read the instance under construction.
+- an **explicit constructor invocation** is a `super(...)` or `this(...)` call inside a
+  constructor. Until Java 25 it had to be the first statement.
+- the **prologue** is everything before that call. The **epilogue** is everything after it.
+- while the prologue runs, the object already exists, but its superclass part hasn't been
+  initialised yet. The JLS calls this an **early construction context**.
+- a **field initializer** is the `= 1` in `int withInit = 1;`. It runs right after `super(...)`
+  returns, so a field that has one isn't really yours to set until then.
+- an **overridable method** is a non-`final`, non-`private` instance method. A superclass
+  constructor that calls one runs the *subclass's* version, before the subclass constructor has
+  done its work.
 
-    public NonNegative(int size) {
-        if (size < 0) throw new IllegalArgumentException("negative size: " + size);
-        super(size);                                  // legal from Java 25
+That gives one rule, and everything below follows from it: **in the prologue, you may write to the
+object under construction but never read it, and you may only write the fields that have no
+initializer.** Nothing can observe a half-built object, and that's what makes allowing statements
+before `super(...)` safe.
+
+## The worked example: the bug this fixes
+
+A superclass constructor that calls an overridable method (verified on JDK 26):
+
+    static class Base {
+        Base() { System.out.println("Base sees: " + describe()); }
+        String describe() { return "base"; }
     }
 
-## The exercise
-
-**TODO 1** is four lines. **The test is the interesting part:**
-
-    @Test
-    void the_base_constructor_never_runs_for_a_rejected_argument() {
-        assertThrows(IllegalArgumentException.class, () -> new Validated.NonNegative(-1));
-        assertEquals(0, Validated.Measured.constructions());
+    static class Old extends Base {
+        private final String label;
+        Old(String l) { super(); this.label = l; }
+        @Override String describe() { return "label=" + label; }
     }
 
-`Measured` counts its own invocations, so the test can prove the **ordering** rather than just the
-outcome. Validate after `super(size)` and the base constructor has already run and the counter is
-1. Only a check before `super(...)` keeps it at 0. **Before Java 25 that test could not be passed
-without the trick in TODO 2.**
-
-**TODO 2 is the pre-25 workaround**, and writing it is what makes the feature feel worth having:
-
-    public Legacy(int size) {
-        super(requireNonNegative(size));              // the only way, before 25
+    static class New extends Base {
+        private final String label;
+        New(String l) { this.label = l; super(); }    // legal from Java 25
+        @Override String describe() { return "label=" + label; }
     }
 
-    private static int requireNonNegative(int size) { ... }
+    new Old("x");     // Base sees: label=null
+    new New("x");     // Base sees: label=x
 
-It works. It has always worked. It costs a `static` helper per validated argument, it has to be
-`static` because `this` does not exist yet, and with three arguments to validate you get three
-helpers and a `super(a(x), b(y), c(z))` call that nobody enjoys reading. `Objects.requireNonNull`
-is this pattern blessed into the JDK, which is why it exists at all.
+`Old` is the classic bug. `Base()` calls `describe()`, which runs `Old`'s version, which reads
+`label` before `Old`'s constructor has assigned it. A `final` field, observed holding `null`. `New`
+assigns it in the prologue, and the bug is gone.
 
-**TODO 3 is the restriction, and it is what makes the feature safe.** Try this:
+**A correction to the old version:** it said the prologue "may not ... use `this` in any way" and
+so "cannot make that worse". The first half is wrong, and the second half undersells the feature.
+The prologue *can* assign fields, and that's exactly what fixes the bug. It can't assign a field
+that has an initializer, because that initializer only runs once `super()` has returned.
 
-    public NonNegative(int size) {
-        System.out.println(this.size);                // the compiler stops you
-        super(size);
-    }
+The rest of the rule, as javac 26 reports it (each verified):
 
-The *prologue* — the code before `super(...)` — may not read fields, call instance methods, or
-use `this` in any way. It can compute, validate, throw, and assign to its own locals. **Write the
-error message down**, because that restriction is the entire reason this is not a hole in object
-initialisation: there is no window in which a partially built object is observable.
+| In the prologue | javac says |
+| --- | --- |
+| `helper();` (an instance method) | `reference to helper() may only appear after an explicit constructor invocation` |
+| `Object me = this;` | `reference to this may only appear after an explicit constructor invocation` |
+| `this.withInit = 3;` (the field has `= 1`) | `assignment to initialized field 'withInit' may only appear after an explicit constructor invocation` |
+| `return;` | `'return' not allowed before explicit constructor invocation` |
+| `this.size = s;` (no initializer) | compiles |
+| `int t = s * 2; if (t < 0) throw ...;` | compiles: locals, arithmetic and `throw` are fine |
 
-Which means it also finally gives a clean answer to a classic problem: an overridable method
-called from a superclass constructor sees uninitialised subclass fields. The prologue cannot make
-that worse, because it cannot touch `this` at all.
+And on earlier releases: `javac --release 24` on JDK 26 rejects a prologue with `flexible
+constructors is not supported in -source 24` (verified), and adding `--enable-preview` gives
+`invalid source release 24 with --enable-preview (preview language features are only supported
+for release 26)` (verified). The three previews before it (JEP 447, 482 and 492, in 22, 23 and
+24) are listed in [the index](INDEX.md) and **not verified here**, because no JDK 22 to 24 is
+installed.
+
+## Part one: `Validated`
+
+`Validated.java` has a base, `Measured`, that counts how many times its constructor ran, and two
+subclasses that must reject a negative size. Delete the `@Disabled`: one test passes already
+(`a_valid_size_is_accepted`) and four fail (verified). `NonNegative` doesn't validate yet, and
+`Legacy` throws `UnsupportedOperationException`.
+
+The test worth reading is `the_base_constructor_never_runs_for_a_rejected_argument`. It doesn't
+just check that `-1` is rejected. It checks that `Measured`'s constructor **never ran**, by asserting
+the counter is still 0. If you validate after `super(size)`, the exception still comes out, but
+the base has already run once (verified: `base ran 1 time(s)`). The test proves the *order*, not
+just the outcome.
+
+Commits, in this order:
+
+1. **TODO 1, `NonNegative`.** Validate in the prologue. Two tests go green: the rejection, and the
+   counter at 0.
+2. **TODO 2, `Legacy`.** The pre-25 way: the check lives in a `static` method that wraps the
+   argument, `super(requireNonNegative(size))`. Write it, and the last two tests go green. Then
+   write down what it cost: why the helper has to be `static`, and what a constructor with three
+   validated arguments would look like.
+3. **TODO 3, the restriction.** In a scratch copy, read a field of `this` before `super(...)`.
+   Write down the exact error, which isn't in the table above. Then don't commit it.
+
+**A correction to the old version:** it said `Objects.requireNonNull` is the `static`-helper
+pattern "blessed into the JDK, which is why it exists at all". The JDK's own javadoc says it's
+"designed primarily for doing parameter validation in methods and constructors", and its example
+is `this.bar = Objects.requireNonNull(bar);`, not a `super(...)` argument (verified, in the JDK
+26 source). It *returns* its argument, and that's what lets it sit inside `super(...)`, but that
+isn't the only reason it exists.
 
 ## What got worse
 
 - _(fill this in)_
 
-Prompts: this was previewed three times (JEP 447, 482, 492) for one grammar change — what was
-hard about it? If `Objects.requireNonNull` inside `super(...)` already worked, is this a feature
-or a tidy-up, and would you mention it in an interview as either? Does allowing statements before
-`super(...)` make constructors a place people now put more logic, and is that a problem you would
-raise in review? What does a record's compact constructor do here, and is it the same feature?
+Prompts: this was previewed three times for one grammar change. Given the table above, what was
+hard about it? If `super(requireNonNegative(size))` already worked, is this a feature or a tidy-up,
+and would you mention it in an interview as either? Now that statements can go before `super(...)`,
+will people put more logic in constructors, and would you raise that in review? A record's compact
+constructor also runs code before the fields are set: is it the same idea, and what can it do
+that this can't?
