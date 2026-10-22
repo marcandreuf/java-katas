@@ -125,7 +125,7 @@ non-deterministic, because the demo is the point. Read it before you try to pin 
 | `collections/ArgsRandom` | mod 16 | no — `main` + print |
 | `collections/RandomFileLines` | mod 05, 09, 13, 17, 18, 19, 30 | no — `main` + print, reads a file |
 | `concurrency/BadThreads` | mod 08, 12 | concurrent — see above |
-| `concurrency/MyDeadlock` | mod 08, 11 | concurrent — deadlocks by design |
+| `concurrency/MyDeadlock` | mod 08, 11 | concurrent — and does **not** deadlock as written; see mod 08 |
 | `concurrency/Safelock` | mod 08, 19 | concurrent |
 | `concurrency/SimpleThreads` | mod 04, 06, 13, 34 | concurrent |
 | `algorithm/L3_Synchronization_Udemy` | mod 12 | concurrent |
