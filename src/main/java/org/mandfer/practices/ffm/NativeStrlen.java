@@ -15,8 +15,8 @@ package org.mandfer.practices.ffm;
  *         macOS. Note that find() returns Optional -- the symbol may genuinely not be there.
  * TODO 2: build the downcall handle. FunctionDescriptor.of(JAVA_LONG, ADDRESS) says
  *         "returns size_t, takes a pointer". Getting this descriptor wrong does not fail to
- *         compile and does not throw -- it returns garbage or crashes the VM. That is the
- *         cost of this API and the thing to write down.
+ *         compile and does not throw -- and on small inputs it often returns the right answer,
+ *         which is worse. That is the cost of this API and the thing to write down.
  * TODO 3: allocate the string in a confined Arena with try-with-resources, and call it.
  *         The Arena is the whole safety story: when the block exits, the memory is freed and
  *         any MemorySegment that escaped becomes unusable rather than a dangling pointer.

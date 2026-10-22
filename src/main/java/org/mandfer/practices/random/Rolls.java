@@ -7,12 +7,12 @@ import java.util.random.RandomGenerator;
  * Randomness you can test, which is the thing java.util.Random made hard and JEP 356
  * (Java 17) made easy.
  *
- * Five sites in this repo call new Random(), and one of them is a bug:
+ * Four sites in this repo call new Random(), and one of them is a bug:
  *
  *     RandomFileLines.java:32   new Random(System.currentTimeMillis())
  *
  * Seeding from the wall clock does not add entropy, it removes it. TODO 4 makes that
- * concrete. The others are guardedLock/Producer:53, guardedLock/Consumer:48 and
+ * concrete. The others are guardedLock/Producer:25, guardedLock/Consumer:20 and
  * Safelock.java:79. See docs/modernization/19-randomness-and-numerics.md.
  *
  * TODO 1: seeded -- RandomGeneratorFactory.of(algorithm).create(seed). Note that

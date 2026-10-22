@@ -104,8 +104,8 @@ All verified, and each is a runtime failure you will eventually see:
 
 That last one is a design decision worth stealing: when a contract says "unspecified", the
 library actively randomises instead of being consistent by accident.
-[Doc 14](14-map-defaults-and-collectors.md) had you meet `Map.of`'s duplicate-key throw from the
-other side.
+[Doc 14](14-map-defaults-and-collectors.md) had you meet `Collectors.toMap`'s duplicate-key throw;
+`Map.of` has the same rule.
 
 ## Part two: `ArgsRandom`
 

@@ -12,7 +12,7 @@ import java.util.Optional;
  * looked at one. See docs/modernization/20-free-diagnostics.md.
  *
  * TODO 1: implement cityOf() as the obvious one-line walk, and let the NPE escape. Do NOT add
- *         null checks. Then run NullPathsTest and read the two messages it asserts.
+ *         null checks. Then run NullPathsTest and read the three messages it asserts.
  * TODO 2: PREDICT both messages before you run the test. Write your prediction down first.
  *         The thing worth learning is which half of the message names the thing that WAS null
  *         and which names the thing you tried to call on it -- people read them backwards.

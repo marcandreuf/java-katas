@@ -33,7 +33,7 @@ import java.util.Optional;
  * TODO 4: strictGet() -- the same call with
  *         .setOption(HttpOption.H3_DISCOVERY, Http3DiscoveryMode.HTTP_3_URI_ONLY), which
  *         forbids the fallback. This one throws. Read the exception message: it names exactly
- *         why, and it is the error you would get in production from a firewall dropping UDP.
+ *         why. It is not what a firewall dropping UDP would give you; doc 29 shows that one.
  * TODO 5: clientLevelNegotiatedVersion() -- set the version on the CLIENT builder instead of
  *         the request. It also falls back here, so the test looks the same. The difference is
  *         not visible offline and you have to know it: see the table in docs/modernization/29.

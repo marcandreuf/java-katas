@@ -72,7 +72,8 @@ class Http3Test {
 
     /**
      * HTTP_3_URI_ONLY forbids the fallback, so the call fails instead of quietly downgrading.
-     * This is the exception a firewall dropping UDP 443 would produce in production.
+     * Here it fails because the URI is http://, which is never sent over HTTP/3. A firewall
+     * dropping UDP gives a different failure, a timeout: see doc 29.
      */
     @Test
     void strict_mode_refuses_to_fall_back() {

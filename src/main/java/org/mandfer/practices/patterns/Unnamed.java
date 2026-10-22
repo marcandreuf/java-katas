@@ -5,7 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The underscore, in all five places Java 22 allows it.
+ * The underscore, in the places this exercise needs. Java 22 allows it in six declaration forms
+ * plus unnamed patterns.
  *
  * This is new code, and the reason is itself the finding: `_` is for things you are FORCED to
  * declare and do not use, and the old code here has almost none of those. What it has instead

@@ -11,7 +11,7 @@
 /// Three features at once, all final in Java 25 (JEP 512):
 ///   - compact source file: the implicit class is unnamed and takes its name from the file
 ///   - instance main method: `void main()`, not `public static void main(String[])`
-///   - the implicit `java.lang.IO` import, which is where `println` comes from here
+///   - `IO.println`: `IO` is in `java.lang`, so every file has it from Java 25
 ///
 /// TODO 1: add a field and a second method, and confirm both work without a class declaration.
 /// TODO 2: add `String[] args` back to main() and read an argument. Note which signatures the
@@ -19,7 +19,7 @@
 /// TODO 3: try to call this from a normal class in src/main/java. Work out why you cannot, and
 ///         write down what that means for using compact source files in anything shipped.
 ///
-/// See docs/27-module-imports-and-compact-sources.md.
+/// See docs/modernization/27-module-imports-and-compact-sources.md.
 void main() {
     IO.println("Hello from a compact source file.");
     IO.println("No class. No static. No args array.");

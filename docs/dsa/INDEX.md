@@ -35,11 +35,11 @@ build and no way to tell the refactor from the fix.
 | --- | --- | --- | --- |
 | 01 | [Which collection, and what it costs](01-which-collection.md) | `CircularList`, `MyArrayList`, measurement | runnable, no tests |
 | 02 | [The contract matrix: nulls, order, and refusals](02-contract-matrix.md) | new | yes |
-| 03 | [`equals`, `hashCode`, and the 65x `Comparable` surprise](03-equals-and-hashcode.md) | new | yes |
+| 03 | [`equals`, `hashCode`, and the `Comparable` surprise](03-equals-and-hashcode.md) | new | yes |
 | 04 | [`Comparable` and `Comparator` contracts](04-ordering-contracts.md) | `SumSearch` | yes |
 | 05 | [Binary search: the contract, and the bug in this repo](05-binary-search.md) | **`BinarySearch.java`** | yes |
 | 06 | [Binary search over an answer space](06-answer-space-search.md) | `FairWorkLoad` | yes |
-| 07 | [Accidental quadratics, and the real crossover](07-accidental-quadratics.md) | `ProductsOfArrayElements` | yes |
+| 07 | [Accidental quadratics, and how big n has to be before they matter](07-accidental-quadratics.md) | `ProductsOfArrayElementsTest` | yes |
 | 08 | [Recursion depth, and the exponential nobody measured](08-recursion-depth.md) | `StringRecursiveReversal`, `PascalsTriangleRecursive` | yes |
 | 09 | [Integer overflow is an algorithm bug](09-integer-overflow.md) | `NumberReverse`, `DuplicateNumber` | yes |
 | 10 | [Structures you assemble from the JDK](10-jdk-assemblies.md) | new | yes |

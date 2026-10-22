@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
  * is a million map entries nobody clears. A ScopedValue is immutable, bound for the duration
  * of one call, and unbound automatically when that call returns.
  *
- * Final in Java 25 (JEP 506), after six releases of incubation and preview.
+ * Final in Java 25 (JEP 506), after an incubator round and four previews.
  * See docs/modernization/26-scoped-values-and-structured-concurrency.md.
  *
  * NOTE: needs --release 25.

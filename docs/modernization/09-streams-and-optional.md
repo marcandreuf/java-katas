@@ -98,8 +98,10 @@ And with a one-line file it's `nextInt(0)`, which throws `IllegalArgumentExcepti
 be positive` (verified). So a file with exactly one non-blank line crashes the program.
 
 **The double report, lines 64-66:** `catch (Exception e) { System.out.println(e.getMessage());
-throw e; }` logs the failure and then rethrows it, and `main` catches it at line 25 and prints it
-again. One failure, two messages, and the first one has no stack trace.
+throw e; }` logs the failure and then rethrows it, and `main` prints whatever arrives at line 25.
+One failure, two messages, and the first one has no stack trace. If the open itself failed, what
+arrives is the `finally`'s `NullPointerException`, not the original: see
+[doc 18](18-files-strings-and-charsets.md).
 
 Commits, in this order:
 
@@ -140,8 +142,9 @@ has taught you nothing. So:
    commit, with every test green before and after.
 
 `algorithm/DuplicateNumber.java:24-31` (`getSum`) is the same shape and converts the same way:
-`numbers.stream().mapToInt(Integer::intValue).sum()`. It has an overflow problem the stream
-doesn't fix: [DSA stage 09](../dsa/09-integer-overflow.md) owns that.
+`numbers.stream().mapToInt(Integer::intValue).sum()`. `getSum` wraps on large input, which on
+valid input turns out to be harmless. The class has a real overflow bug that starts before the sum
+overflows, and the stream doesn't fix it: [DSA stage 09](../dsa/09-integer-overflow.md) owns that.
 
 ## Part four: `Optional`, on the one method that wants it
 

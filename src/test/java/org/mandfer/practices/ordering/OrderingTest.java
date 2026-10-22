@@ -42,7 +42,7 @@ class OrderingTest {
     @Test
     void a_broken_comparator_is_silent_on_a_small_list() {
         assertNull(Ordering.sortFailureMessage(manyTies(8), intransitive()),
-                "8 elements: no exception, and the order is still wrong");
+                "8 elements: no exception; with these values the order even comes out right");
     }
 
     /** Above it, the JDK refuses. Same comparator, same data shape, different size. */

@@ -17,13 +17,15 @@ import java.util.List;
  *         did not make you type.
  * TODO 3: implement hashSetSize() and roundTripsInHashMap(). Three lines each.
  * TODO 4: implement ComparableColliding -- Colliding with a compareTo added and NOTHING else
- *         changed. Then run KeysBenchmark (it has a main) and compare the two.
+ *         changed. Then run the KeysRace driver in docs/dsa/03 before and after, and
+ *         compare the two.
  *
  *         The difference is roughly 65x on 20,000 keys. It is JEP 180: a HashMap bucket that
  *         overflows turns into a red-black tree, a tree needs an ordering, and without
  *         Comparable it cannot build one. The interface has nothing to do with hashing and it
  *         is the whole difference. Write down why this is a SECURITY feature and not a
- *         performance one -- the JEP exists because of CVE-2011-4858.
+ *         performance one. JEP 180 replaced the alternative string hashing added after the 2011
+ *         hash-flooding disclosures (CVE-2011-4858 is Tomcat's).
  */
 public final class Keys {
 

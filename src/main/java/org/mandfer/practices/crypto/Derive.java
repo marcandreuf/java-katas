@@ -8,7 +8,7 @@ import java.util.List;
  * between Java 21 and 25.
  *
  * Nothing in this repo does any cryptography, which is why this is new code. See
- * docs/modernization/32-crypto.md. NOTE: needs --release 25.
+ * docs/modernization/32-crypto.md. NOTE: needs --release 25 or later.
  *
  * TODO 1: hkdf() -- KDF.getInstance("HKDF-SHA256") with HKDFParameterSpec.ofExtract()
  *         .addIKM(..).addSalt(..).thenExpand(info, length). Final in Java 25 (JEP 510).

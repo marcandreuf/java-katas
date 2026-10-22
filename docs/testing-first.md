@@ -118,22 +118,22 @@ non-deterministic, because the demo is the point. Read it before you try to pin 
 
 | Class | Named by | Testable as written? |
 | --- | --- | --- |
-| `algorithm/FindMiddleIndex` | DSA 12 | **yes** — returns an `int`. Start here. |
+| `algorithm/FindMiddleIndex` | mod 09 | **yes** — returns an `int`. Start here. |
 | `concurrency/Order` | mod 01, 03, 12 | **yes** — plain data class |
 | `algorithm/DecimalToBinary` | mod 03 · DSA 12 | no — `void` + print, extract first |
-| `collections/FindDups` | mod 05, 09, 12, 14, 17 | no — `main` + print, extract first |
+| `collections/FindDups` | mod 05, 09, 12, 14 | no — `main` + print, extract first |
 | `collections/ArgsRandom` | mod 16 | no — `main` + print |
-| `collections/RandomFileLines` | mod 05, 09, 13, 17, 18, 19, 30 | no — `main` + print, reads a file |
+| `collections/RandomFileLines` | mod 05, 09, 13, 18, 19, 30 | no — `main` + print, reads a file |
 | `concurrency/BadThreads` | mod 08, 12 | concurrent — see above |
 | `concurrency/MyDeadlock` | mod 08, 11 | concurrent — and does **not** deadlock as written; see mod 08 |
 | `concurrency/Safelock` | mod 08, 19 | concurrent |
-| `concurrency/SimpleThreads` | mod 04, 06, 13, 34 | concurrent |
+| `concurrency/SimpleThreads` | mod 04, 06, 13, 21, 34 | concurrent — the timeout path needs a clock seam and a poll seam; see mod 13 |
 | `algorithm/L3_Synchronization_Udemy` | mod 12 | concurrent |
 | `concurrency/OrdersProcessingSystem` | mod 06, 12 | concurrent — `run()` is empty |
 | `concurrency/forkjoin/ForkBlur` | mod 07, 11, 13, 31, 34 | concurrent — blur maths is pure, extract it |
 | `concurrency/guardedLock/Drop` | mod 07 | concurrent — but the invariant is clean |
-| `concurrency/guardedLock/Producer` | mod 12, 19 | concurrent |
-| `concurrency/guardedLock/Consumer` | mod 12, 19 | concurrent |
+| `concurrency/guardedLock/Producer` | mod 07, 12, 19 | concurrent |
+| `concurrency/guardedLock/Consumer` | mod 07, 12, 19 | concurrent |
 | `concurrency/guardedLock/ProducerConsumerExample` | — | concurrent |
 | `generics/PageObject` | mod 01 | no — needs a Selenium driver |
 | `generics/FirstPageObject` | — | no — needs a Selenium driver |
@@ -146,8 +146,10 @@ to look at `PageObject`, not to rewrite it.
 ## When the compiler can prove it instead
 
 One kind of change needs no test, because you can prove it changed nothing: a change that leaves
-every class file **byte-identical**. Adding the diamond (`new ArrayList<>()`) is the only one in
-the track. [Doc 05](modernization/05-var.md) gives the before-and-after `javac` and `diff -r`
+every class file **byte-identical**. Adding the diamond (`new ArrayList<>()`) is the main one in
+the track. Renaming an unused variable to `_` ([doc 21](modernization/21-unnamed-and-primitive-patterns.md))
+is the other: `javap -c` is identical, and only the debug `LocalVariableTable` differs, so compile
+without `-g` for the `diff`. [Doc 05](modernization/05-var.md) gives the before-and-after `javac` and `diff -r`
 commands, and the result goes in the commit message. That proof is what replaces the test. If you
 haven't run the `diff`, you don't have the exception. `var` does *not* qualify: it can change the
 static type, and with it the bytecode.

@@ -61,7 +61,7 @@ class RecursionTest {
     }
 
     /**
-     * The repo's own usage, printPascal(6), costs 120 calls and runs instantly. Row 30 costs
+     * The repo's own usage, printPascal(6), costs 219 calls and runs instantly. Row 30 costs
      * over 290 million for a single cell. Both halves of that matter: the exponential is real
      * and it is also, at the only size this code is ever used at, irrelevant.
      */

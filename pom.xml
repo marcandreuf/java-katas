@@ -148,7 +148,8 @@
              the preview flag refuses to load on any other JDK version, so enabling it here
              would make the build output un-runnable on the next release.
 
-             Needed by docs/modernization/26 (structured concurrency, still preview in 27) and docs/modernization/33.
+             For the preview experiments in docs/modernization/26 (structured concurrency) and docs/modernization/33;
+             nothing in src/ uses a preview feature today.
              Run it with:   mvn -Ppreview verify
              Requires a JDK whose feature version equals java.release. -->
         <profile>

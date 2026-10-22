@@ -65,7 +65,7 @@ element, which isn't the same thing as a bad index.
 
 `CircularList.java` is a hand-written **sorted circular linked list**: `insert(n)` puts `n` in
 order and returns the head, and the last node points back to the first. `CircularListTest` has
-five tests, all green. They insert in ascending order, or into the middle. **None of them inserts
+six tests, all green. They insert in ascending order, or into the middle. **None of them inserts
 a value smaller than the head of a list that has two or more elements, and none inserts a
 duplicate.** Both are broken (verified):
 

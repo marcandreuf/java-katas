@@ -8,8 +8,8 @@ package org.mandfer.practices.algorithm;
  *   StringRecursiveReversal.reverseString  -- recursion depth IS the string length, and it
  *                                             allocates a substring per frame, so it is O(n^2)
  *                                             in allocation as well
- *   PascalsTriangleRecursive.cellValue     -- exponential. 120 calls at the repo's own
- *                                             printPascal(6); 2,147,483,616 at row 30.
+ *   PascalsTriangleRecursive.cellValue     -- exponential. 219 calls at the repo's own
+ *                                             printPascal(6) (120 for row 6 alone); 2,147,483,616 at row 30.
  *
  * Neither has a test. See docs/dsa/08-recursion-depth.md.
  *

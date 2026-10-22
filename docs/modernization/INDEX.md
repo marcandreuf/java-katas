@@ -205,6 +205,7 @@ this track added it. Java 8 is not revision here, it is new ground.
 | Key Derivation Function API (preview) | 478 | **[doc 32](32-crypto.md)** |
 | Flexible constructor bodies (3rd preview) | 492 | **[doc 28](28-flexible-constructor-bodies.md)** |
 | Module imports / simple source files (2nd preview) | 494, 495 | **[doc 27](27-module-imports-and-compact-sources.md)** |
+| Primitive types in patterns (2nd preview) | 488 | [doc 21](21-unnamed-and-primitive-patterns.md) |
 | Late barrier expansion, images without JMODs | 475, 493 | read only |
 
 ## Java 25 (2025, LTS) — the biggest language batch since 21
@@ -232,10 +233,11 @@ this track added it. Java 8 is not revision here, it is new ground.
 | **HTTP/3 for the HttpClient API** | 517 | **[doc 29](29-http3-and-the-httpclient.md)** |
 | **Prepare to Make Final Mean Final** | 500 | **[doc 30](30-upgrade-hazards.md)** |
 | **Applet API removed** | 504 | **[doc 30](30-upgrade-hazards.md)** |
+| **`Thread.stop()` removed** | — (no JEP) | **[doc 30](30-upgrade-hazards.md)** |
 | AOT object caching with any GC | 516 | **[doc 31](31-runtime-defaults.md)** |
 | G1 throughput via reduced synchronization | 522 | **[doc 31](31-runtime-defaults.md)** |
 | Structured concurrency (6th preview) | 525 | **[doc 26](26-scoped-values-and-structured-concurrency.md)** — the `Joiner` API changed again |
-| Lazy Constants (2nd preview, renamed) | 526 | **[doc 33](33-preview-shelf.md)** |
+| Lazy Constants (2nd preview, renamed, API reshaped: `LazyConstant.of(supplier)`) | 526 | **[doc 33](33-preview-shelf.md)** |
 | PEM encodings (2nd preview) | 524 | [doc 33](33-preview-shelf.md) |
 | Primitive types in patterns (4th preview) | 530 | [doc 21](21-unnamed-and-primitive-patterns.md) |
 | Vector API (11th incubator) | 529 | read only — see below |
