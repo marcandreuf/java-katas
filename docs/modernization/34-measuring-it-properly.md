@@ -36,14 +36,15 @@ measured iterations, one fork):
     @Benchmark public double returned()  { return Math.log(x); }
 
     Benchmark           Mode  Cnt   Score   Error  Units
-    LogBench.baseline   avgt    3   0.364 ± 0.082  ns/op
-    LogBench.discarded  avgt    3   0.363 ± 0.024  ns/op
-    LogBench.returned   avgt    3  13.616 ± 0.255  ns/op
+    LogBench.baseline   avgt    3   0.370 ± 0.153  ns/op
+    LogBench.discarded  avgt    3   0.364 ± 0.099  ns/op
+    LogBench.returned   avgt    3  13.639 ± 0.475  ns/op
 
 `discarded` costs the same as an empty method. **The logarithm isn't slow or fast: it isn't
 there.** The JIT saw the result go nowhere and deleted the call. Returning the value makes JMH
-consume it, and the real cost appears, about 37 times higher. (These ran on a machine with other
-JVMs busy, so trust the ratio, not the nanoseconds.)
+consume it, and the real cost appears, about 37 times higher. (Three
+measured iterations is few: look at the `Error` column before trusting the baseline's third
+decimal place.)
 
 It isn't only microbenchmarks. While writing [doc 31](31-runtime-defaults.md), a program that
 measured heap use before and after filling an array reported **-4.2 bytes per object**. The array

@@ -57,8 +57,8 @@ that last step isn't verified here.
 **A correction to the old version:** it said `ForkBlur` "allocates hard, splits across the
 common pool" and "runs for a minute". None of the three is true:
 
-- **It runs for under a second.** On a 4000×3000 image the whole program takes 0.9–1.0 s, and the
-  blur 160–220 ms (verified, 10 cores, under load).
+- **It runs for under a second.** On a 4000×3000 image the whole program takes 0.84–0.94 s, and the
+  blur 158–180 ms (verified, three runs, 10 cores).
 - **It doesn't use the common pool.** `blur()` creates a new `ForkJoinPool` on every call
   (`ForkBlur.java:113`). [Doc 11](11-jvm-diagnostics.md) question 2 is about what that does over
   time.
@@ -66,9 +66,9 @@ common pool" and "runs for a minute". None of the three is true:
 
 | Collector | collections | total pause |
 | --- | --- | --- |
-| G1 | 4 | 5 ms |
+| G1 | 4 | 6 ms |
 | Parallel | 3 | 26 ms |
-| Serial | 7 | 63 ms |
+| Serial | 7 | 66 ms |
 | ZGC | **0** | none |
 
 ZGC never ran at all. On a sub-second program the GC is a rounding error, and "which collector
@@ -126,11 +126,12 @@ Then the four things to know, all verified:
   `The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime`.
   A cache trained under ZGC works under ZGC. JEP 516 (26) is what lets the cached objects be used
   with any GC. The cache still has to be trained with the same pointer settings.
-- **On `ForkBlur` the gain is small, but not zero.** Five runs each: 865–930 ms without the
-  cache, 760–905 ms with it (under load, so read it as roughly 10–15%).
-- **On a program that only starts up, it's large.** A one-line stream program: 36–39 ms without,
-  22–24 ms with (verified, seven runs each). Startup is what JEP 483 (24) and JEP 514 (25) are
-  for. Question 4 asks you to say why the blur shows less.
+- **On `ForkBlur` it saves about 130 ms, every run.** Seven runs each: 840–923 ms without the
+  cache, 745–763 ms with it (verified). The ranges don't overlap. That's about 15% of the run.
+- **On a program that only starts up, it saves about 40%.** A one-line stream program: 36–37 ms
+  without, 21–27 ms with (verified, seven runs each). That's only about 14 ms, a tenth of what
+  `ForkBlur` saved. Startup is what JEP 483 (24) and JEP 514 (25) are for, and question 4 asks
+  which of the two numbers is the one that matters.
 
 ## Part four: JFR, CPU-time sampling
 
@@ -158,7 +159,8 @@ wall-clock sampler. Compare the two on the same run. `jdk.MethodTiming` and `jdk
    different collector, using `-XX:ActiveProcessorCount` and the `systemd-run` memory limits from
    [doc 11](11-jvm-diagnostics.md). Then check whether `-XX:MaxRAM` does the same thing. (It's
    not obvious.) The INDEX says JEP 523 changes this in 27. _(fill in)_
-4. **AOT on `ForkBlur` shows a little; on a trivial program it shows a lot.** Why, and what
+4. **AOT saved `ForkBlur` more milliseconds, and the trivial program a bigger percentage.** Why
+   is that, which number would you put in front of someone deciding whether to adopt it, and what
    kind of service would see the second number? _(fill in)_
 5. **The explain-it version.** _"Which GC should we use?"_ Answer in three sentences without
    saying "it depends", naming the one measurement you'd take first. _(fill in)_
