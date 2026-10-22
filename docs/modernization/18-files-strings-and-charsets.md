@@ -87,7 +87,7 @@ that.
 ### Then fix the old code
 
 Rewrite `RandomFileLines.readLines` with `Files.readAllLines` or `Files.lines`. Do the off-by-one
-at line 32 **first**, as its own commit with its own test, exactly as
+at line 35 **first**, as its own commit with its own test, exactly as
 [doc 09](09-streams-and-optional.md) says — `rline.nextInt(lstLines.size() - 1)` never selects the
 last line, and a rewrite that silently fixes it has destroyed the evidence.
 
