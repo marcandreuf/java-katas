@@ -44,7 +44,8 @@ Three further files carry **verified bugs** that this track documents but does n
 
 - `The100DoorsCyberDojoTest:89-107` asserts **nothing** — it prints. The kata's answer (perfect
   squares) is never checked.
-- `algorithm/DecimalToBinary.java` divides by 16 and prints **hex**;
+- `algorithm/DecimalToBinary.java` divides by 16 and prints each base-16 digit as a decimal
+  number, so 255 comes out as `1515`: **not binary, and not even hex**;
   [modernization doc 03](../modernization/03-pattern-matching.md) owns it.
 - `algorithm/SumSearch.java:13` sorts the caller's array; [stage 04](04-ordering-contracts.md)
   asks you to decide what to do about it.

@@ -68,7 +68,7 @@ since 2014:
 Named as toys and given no stage: `FindMiddleIndex`, `PascalsTriangle`,
 `RotateMatrix90DegreeInPlace`. Stage 12 says why.
 
-Owned by the other track, cross-referenced rather than duplicated: `DecimalToBinary` (prints hex —
+Owned by the other track, cross-referenced rather than duplicated: `DecimalToBinary` (broken base 16, not even hex —
 [doc 03](../modernization/03-pattern-matching.md)), `MyArrayList` and `CircularList` as rewrites
 ([doc 10](../modernization/10-sequenced-collections-and-httpclient.md)), view semantics
 ([doc 16](../modernization/16-collection-factories.md)), and measurement discipline

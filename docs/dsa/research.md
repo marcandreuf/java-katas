@@ -676,7 +676,7 @@ Reasons, including the uncomfortable ones.
 | `algorithm/StringRecursiveReversal.java` | 18 | recursion depth + quadratic allocation | **load-bearing** | **Yes.** Two real traps in four lines. |
 | `algorithm/PascalsTriangleRecursive.java` | 49 | exponential recursion, memoisation | **load-bearing** | **Yes**, as the "measure before you optimise" case. |
 | `algorithm/NumberReverse.java` | 23 | silent integer overflow | **load-bearing** | **Yes**, small. One test, `Math.*Exact`. |
-| `algorithm/DecimalToBinary.java` | 26 | radix conversion; **prints hex, no test** | load-bearing as a *bug* | Owned by [doc 03](../modernization/03-pattern-matching.md). Cross-reference only. |
+| `algorithm/DecimalToBinary.java` | 26 | radix conversion; **base 16 with decimal digits (255 → `1515`), no test** | load-bearing as a *bug* | Owned by [doc 03](../modernization/03-pattern-matching.md). Cross-reference only. |
 | `algorithm/SumSearch.java` | 34 | two-pointer on sorted input; argument mutation | **load-bearing**, for the side effect | **Yes**, as a precondition exercise. |
 | `algorithm/DuplicateNumber.java` | 48 | arithmetic trick + unstated preconditions | mixed | **Yes**, as a *precondition* exercise, not an algorithm one. |
 | `algorithm/MyArrayList.java` | 28 | growable array internals | **interview-only** | Owned by [doc 10](../modernization/10-sequenced-collections-and-httpclient.md). |
@@ -873,7 +873,7 @@ no stage document has been written.** When they are, the convention from
   `BinarySearch.java:40` and explain why it is already correct.
 - **Teaches:** that overflow is silent, that `Math.*Exact` is the Java 8 fix, and that an algorithm
   with unstated preconditions is not an algorithm. Cross-reference
-  [doc 03](../modernization/03-pattern-matching.md), which owns the `DecimalToBinary` hex bug, and say what
+  [doc 03](../modernization/03-pattern-matching.md), which owns the `DecimalToBinary` base bug, and say what
   `Integer.toString(n, radix)` and `HexFormat` (Java 17) do to the whole family.
 - **Trap a test can catch:** all three, with one input each.
 
