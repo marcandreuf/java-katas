@@ -4,95 +4,141 @@
 build change
 
 > **No safety net:** `FindDups` has no test. Write one first, in a separate commit, asserting
-> what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why the order matters.
+> what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how,
+> and why the order matters. `WordTally` is new code with its tests already written.
 
-## Where it lands
+## What this stage is actually about
 
-**`collections/FindDups.java`** is the whole document in fourteen lines. It counts distinct words
-using a `TreeSet`, an anonymous `Comparator` and a `for` loop, and it is Oracle tutorial code from
-before any of this existed. [Doc 09](09-streams-and-optional.md) asks you to turn it into a
-`distinct().count()`. **Do that first and then come back**, because the interesting version of the
-problem is the one the file does *not* solve: it tells you a word was duplicated but never how
-many times.
+Five words, defined once:
 
-**`algorithm/FairWorkLoad.java`** is the second target, and the honest answer there may be "leave
-it alone" — see below.
+- a **default method** is an interface method with a body. Java 8 used them to add methods to
+  `Map` without breaking every class that implements it: `getOrDefault`, `putIfAbsent`, `merge`,
+  `computeIfAbsent`, `compute`, `forEach`, `replaceAll`.
+- **`merge(key, value, fn)`** puts `value` if the key is absent, and otherwise stores
+  `fn(old, value)`.
+- **`computeIfAbsent(key, fn)`** calls `fn(key)` only if the key is absent, stores the result, and
+  returns whatever is now mapped.
+- a **downstream collector** is the collector inside another one: in `groupingBy(f, counting())`,
+  `counting()` decides what each group becomes.
+- a **comparator combinator** builds a comparator out of smaller ones: `comparing`,
+  `thenComparing`, `reversed`.
 
-New code: **`collections/WordTally.java`**, five TODOs, counting the same words five ways.
+That gives one rule, and everything below follows from it: **each of these methods' contracts
+says exactly when your function runs and when it doesn't. Read the contract, not the name.**
+Every trap in this doc is a method doing what its javadoc says, which wasn't what its name
+suggested.
 
-## The exercise
+## The worked example
 
-### The counter, three ways
+Five `Map` calls, and what each one does with a key that is absent, present, or mapped to `null`
+(verified, on a `HashMap`):
 
-TODOs 1–3 all produce `{fig=3, pear=2, apple=1, kiwi=1}`. The point is the differences.
+    m.put("x", null);
+    m.getOrDefault("x", 0)              // null: the key is present, so no default
+    m.putIfAbsent("x", 1)               // returns null and STORES 1: a null value counts as absent
 
-    map.merge(word, 1, Integer::sum);                           // TODO 1
-    map.computeIfAbsent(word, k -> new int[1])[0]++;             // TODO 2, roughly
-    words.stream().collect(groupingBy(identity(), counting()));  // TODO 3
+    m.put("k", 1);
+    m.merge("k", 100, (o, n) -> o + n)  // fn(1, 100) is called: 101
+    m.merge("j", 100, (o, n) -> o + n)  // fn is never called: 100 is stored as it is
+    m.merge("y", 1, (o, n) -> null)     // returns null and REMOVES "y"
+    m.merge("z", null, Integer::sum)    // NullPointerException
 
-1. **`merge` is the right answer for counting** and the shortest correct one in the language. The
-   thing to understand is its contract: the second argument is used *only* when the key is
-   absent, and the function is called *only* when it is present. Nearly everyone reads it the
-   other way round the first time.
-2. **`computeIfAbsent` is the wrong tool here and that is why it is TODO 2.** Try it and you will
-   find you need a mutable value — an `int[1]`, an `AtomicInteger`, something — because the
-   function only runs when the key is missing, so it cannot increment. What it is genuinely for is
-   `Map<K, List<V>>`: `computeIfAbsent(k, x -> new ArrayList<>()).add(v)` is the multimap idiom
-   and the reason you do not need Guava for it. **Reaching for the right one of these two is the
-   deliverable of this document.**
-3. **`groupingBy(identity(), counting())` hands you `Long` and you cannot ask it for `Integer`.**
-   `counting()` is specified to return `Collector<T, ?, Long>`. So the stream version forces a
-   type change on every caller, which is a real cost at an API boundary and the sort of thing that
-   decides which version ships.
+    m.computeIfAbsent("q", k -> null)   // stores nothing: the map stays as it was
 
-Also know `getOrDefault` — the read-only one, no insertion — and that reaching for
-`containsKey` before `get` is almost always one of these three methods spelled long-hand.
+Not one of those is what you'd guess from the name alone. `getOrDefault` and `putIfAbsent`
+disagree about whether a `null` value means "absent". `merge`'s second argument is only used when
+the key is **absent**; its function is only called when the key is **present**. Nearly everyone
+reads it the other way round the first time.
 
-### The `toMap` trap
+And here's what `computeIfAbsent` is actually for, the **multimap** (verified):
 
-TODO 4, and `WordTallyTest.strict_to_map_rejects_a_duplicate_key` is the one to read before you
-write anything:
+    Map<Character, List<String>> byLetter = new TreeMap<>();
+    for (String w : words)
+        byLetter.computeIfAbsent(w.charAt(0), k -> new ArrayList<>()).add(w);
+    // {a=[apple], f=[fig, fig, fig], k=[kiwi], p=[pear, pear]}
+
+The function only runs once per key, to create the list. Every later call returns the same list,
+and `.add(w)` mutates it. That's the idiom that makes Guava's `Multimap` unnecessary for most code.
+
+## Part one: `WordTally`, five ways to count
+
+`collections/WordTally.java` is new code. `WordTallyTest` has ten tests on
+`fig pear fig apple pear fig kiwi`. Delete its `@Disabled` to begin. They all pass against a
+scratch implementation (verified), so a failure is yours, not the test's.
+
+**TODOs 1–3 all produce `{fig=3, pear=2, apple=1, kiwi=1}`.** The point is the differences.
+
+1. **TODO 1, `merge`.** Given the worked example, this is one line in a loop.
+2. **TODO 2, `computeIfAbsent`.** It's the wrong tool for counting, and that's why it's a TODO.
+   Its function only runs when the key is missing, so it can't increment anything. Make it work
+   anyway and notice what you had to add. **Choosing between TODO 1 and TODO 2 for a given job is
+   the deliverable of this part.**
+3. **TODO 3, `groupingBy` with `counting()`.** The test expects `Map<String, Long>`, because
+   `counting()` returns a `Long`. **A correction to the old version of this doc:** it said you
+   "cannot ask it for `Integer`". You can: `groupingBy(w -> w, summingInt(w -> 1))` gives
+   `Map<String, Integer>` (verified). The signature here fixes `Long`, so the question is which
+   you'd choose at an API boundary, and why `counting()` returns `Long` in the first place.
+
+**TODO 4, the `toMap` trap.** Read `strict_to_map_rejects_a_duplicate_key` before you write
+anything. Two-argument `Collectors.toMap` throws on a repeated key (verified):
 
     IllegalStateException: Duplicate key fig (attempted merging values 3 and 3)
 
-Two-argument `Collectors.toMap` has nowhere to put a collision, so it throws. **Everyone expects
-it to overwrite**, because that is what `Map.put` does and what every other language's equivalent
-does. It does not. This fails in production the first time real data has a repeated key, having
-passed every test written against distinct sample data — which is the same failure shape
-[doc 00](00-start-here.md) describes for `ArrayUtils.removeElement`, and the same lesson: *the
-sample data is the bug*.
+Everyone expects it to overwrite, because `Map.put` does. It doesn't: it has nowhere to put a
+collision. This kind of bug passes every test written against distinct sample data, then fails in
+production the first time a key repeats. It's the same failure as `ArrayUtils.removeElement` in
+[doc 09](09-streams-and-optional.md): *the sample data is the bug*. The lenient version takes a
+merge function. Whichever one you pass, say in a comment which value wins.
 
-The three-argument form takes a merge function and is what you almost always want. Know that
-`(a, b) -> a` is "first wins", `(a, b) -> b` is "last wins", and that writing either of them
-without a comment is how the next person loses an afternoon.
+**TODO 5, `topWords`.** Most frequent first, ties alphabetical ascending. It's the `reversed()`
+placement trap from [doc 12](12-lambdas-and-method-references.md), moved onto `Map.Entry`, where
+it's harder to see. `apple` and `kiwi` both occur once. One natural chain gives
+`[fig, pear, apple, kiwi]` and another, with `reversed()` in a different place, gives
+`[fig, pear, kiwi, apple]` (verified). Both compile. Only a test with a tie in it can tell them
+apart, which is why `top_words_break_ties_alphabetically_ascending` exists.
 
-### Comparator chaining, again
+On the way you'll meet a type-inference error. **A correction to the old version:** it said
+`Map.Entry.comparingByValue()` "needs that explicit type witness and will not infer". Assigned
+directly to a `Comparator<Map.Entry<String, Long>>`, it infers fine (verified). It fails only when
+you chain a method onto it, because Java infers type arguments from the target type, and
+`.reversed()` is called before there is a target (verified):
 
-TODO 5 is the `reversed()` placement trap from [doc 12](12-lambdas-and-method-references.md),
-moved onto `Map.Entry` where it is harder to see:
+    l.sort(Map.Entry.comparingByValue().reversed());
+    // error: ... found: Comparator<Entry<Object,V#1>>
 
-    comparingByValue().reversed().thenComparing(comparingByKey())  // [fig, pear, apple, kiwi]
-    comparingByValue().thenComparing(comparingByKey()).reversed()  // [fig, pear, kiwi, apple]
+`Map.Entry.<String, Long>comparingByValue()` is the fix, and now you know why it's needed.
 
-`apple` and `kiwi` both appear once. The second form reverses the tie-breaker along with the
-count, so the alphabetical order comes out backwards. **Both compile, both are "sort by count
-descending", and only test data containing a tie can tell them apart.** This is the second time
-this document set has shown you the same bug; that is deliberate.
+## Part two: `FindDups`, the question it never answered
 
-While you are here: `Map.Entry.<String,Integer>comparingByValue()` needs that explicit type
-witness and will not infer. Knowing why saves you ten minutes of fighting the compiler.
+`collections/FindDups.java:20-25` reports "Duplicate detected: cat" but never how many times.
+[Doc 09](09-streams-and-optional.md) left exactly that question here.
 
-### `FairWorkLoad`, and the right to say no
+**A correction to the old version:** it said doc 09 asks you to turn `FindDups` into
+`distinct().count()`. Doc 09 now shows that `distinct()` is wrong for this file, because it's
+case-sensitive and the original isn't. **The same trap is waiting here.** Group
+`Cat dog cat Dog bird` by the word itself and you get **five** groups of one (verified), while the
+original reports three distinct words:
 
-`algorithm/FairWorkLoad.java` is a binary search over index arithmetic. You *can* express parts of
-it with streams and a `groupingBy`. **Decide whether you should, and write the decision down.**
-[Doc 09](09-streams-and-optional.md) makes the same point about the same file, which means this is
-the second time you are being asked, which means a one-line answer is no longer good enough.
+    groupingBy(w -> w, counting())             // {bird=1, cat=1, Cat=1, Dog=1, dog=1}
+    groupingBy(w -> w, TreeMap::new, counting()) // sorted, but still 5 keys
 
-And note its oldest debt: `FairWorkloadTest.testMaxNumPerSixWorkers` has been `@Disabled` since
-2014. **Do not touch that file in this document.** Diagnose it in stage 09 first. A rewrite that
-makes a twelve-year-old failing test pass by accident has taught you nothing and destroyed the
-evidence.
+Commits, in this order:
+
+1. **Characterize**, as [`../testing-first.md`](../testing-first.md) describes. If you did doc 09
+   first, the test exists. Make sure it has the mixed-case input.
+2. **Add the counts**: a method returning word → occurrences, case-insensitive, matching the
+   original's idea of "the same word". Decide which spelling is kept as the key and test it. That
+   decision is a behaviour you choose, not syntax you translate.
+3. **Decide what `main` prints**, now that it can say "cat ×2" instead of "Duplicate detected".
+
+## Part three: `FairWorkLoad`, and the right to say no
+
+[Doc 09](09-streams-and-optional.md) part three already covers this file: its inner loop carries
+state from one element to the next, so it isn't a stream, and converting its two helpers before
+diagnosing `FairWorkloadTest.testMaxNumPerSixWorkers` would fix a twelve-year-old bug by accident.
+**Don't touch it in this doc.** Nothing in it is a counting or grouping problem: the old version
+suggested "a `groupingBy`", and there's nothing to group. Write one line saying why, and move on.
+[DSA stage 06](../dsa/06-answer-space-search.md) has the diagnosis.
 
 ## What got worse
 
@@ -100,10 +146,20 @@ evidence.
 - _(fill this in)_
 - _(fill this in)_
 
-Prompts: what does `groupingBy` returning `Long` cost you at a REST or JPA boundary, and would you
-re-map it or change the callers? `computeIfAbsent` on a `ConcurrentHashMap` with a mapping function
-that touches the same map **deadlocks the bin** — is that documented behaviour, and would you have
-found it without being told? At what input size does the stream version of a counter beat the
-`merge` loop, and did you measure or guess? `Map.of` throws on duplicate keys and on nulls, and
-returns an immutable map — when is that the wrong default? ([Stage 5](INDEX.md) is about exactly
-that.)
+Prompts: what does `groupingBy` returning `Long` cost at a REST or JPA boundary, and would you
+re-map it or change the callers? `merge` with a function returning `null` deletes the key: is that
+a feature or a trap? The `ConcurrentHashMap.computeIfAbsent` javadoc forbids a mapping function
+that updates the same map. **A correction to the old version:** it said doing it "deadlocks the
+bin". On JDK 26, recursing on the same key throws `IllegalStateException: Recursive update`
+(verified), and a plain `HashMap` throws `ConcurrentModificationException` (verified). A
+different key in the same bin returned normally in my test (keys 0 and 16), which proves only that
+it can work, not that it's allowed. Would you have found the rule without being told? At what input
+size does the stream counter beat the `merge` loop, and did you measure or guess?
+
+Three smaller Java 8 additions to try in `jshell`, all verified: `StringJoiner` with
+`setEmptyValue("(none)")` (compare with `CircularList.toString`'s trailing comma in
+[doc 10](10-sequenced-collections-and-httpclient.md)); `Base64.getEncoder()` vs
+`getUrlEncoder()`, which turn the same three bytes into `+//+` and `-__-`; and
+`Arrays.parallelSort`, which is worth timing against `Arrays.sort` on an array of ten thousand
+before you believe it helps. `Map.of` throws on duplicate keys and nulls, and returns an immutable
+map: when is that the wrong default? [Doc 16](16-collection-factories.md) is about exactly that.
