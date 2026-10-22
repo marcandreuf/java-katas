@@ -1,93 +1,163 @@
 # 08. Recursion depth, and the exponential nobody measured
 
-**Stage 8 of [the DSA track](INDEX.md)** · new code: `algorithm/Recursion.java`, four TODOs
+**Stage 8 of [the DSA track](INDEX.md)** · new code: `algorithm/Recursion.java`, four TODOs ·
+lands on **`algorithm/StringRecursiveReversal.java`** and
+**`algorithm/PascalsTriangleRecursive.java`**
 
-## Where it lands
+> **No safety net:** `StringRecursiveReversal` and `PascalsTriangleRecursive` have no tests. Write
+> them first, in a separate commit, asserting what the code does today, bugs included.
+> [`../testing-first.md`](../testing-first.md) says how, and why the order matters.
 
-Two files, neither with a test:
+## What this stage is actually about
 
-- **`algorithm/StringRecursiveReversal.java`** — recursion depth **is** the string length, and it
-  allocates a fresh substring per frame, so it is also O(n²) in allocation
-- **`algorithm/PascalsTriangleRecursive.java:41-46`** — `cellValue` is exponential
+Five words, defined once:
 
-## Part one: there is no safe recursion depth
+- a **stack frame** is the memory one method call uses while it runs: its parameters, its locals,
+  and where to return to. A recursive call adds one frame, which is freed when the call returns.
+- the **thread stack** is the fixed-size block those frames live in. `-Xss` sets its size; the
+  default on this JVM is 1 MB (`ThreadStackSize = 1024`, verified).
+- **`StackOverflowError`** is what the JVM throws when a call needs a frame and there's no room.
+  It's an `Error`, not an `Exception`.
+- **tail-call elimination** is a compiler reusing the current frame when a method's last action is
+  calling itself. HotSpot doesn't do it: the worked example below is a tail call, and it overflows.
+- **memoisation** is caching each result of a pure function by its arguments, so each distinct call
+  is computed once.
 
-The usual question is "how deep can I recurse?". The answer is that **the question has no stable
-answer**, and demonstrating that is TODO 2.
+That gives one rule, and everything below follows from it: **if the recursion depth is a function of
+the input size, the input size decides when it crashes, and you can't predict that number.** Recurse
+on things whose depth you control, like a balanced tree or a fixed grammar. Use a loop for anything a
+user can make longer.
 
-Frames before `StackOverflowError`, measured on this JVM:
+## The worked example: how deep is "too deep"?
 
-| `-Xss` | trivial method | method with 4 `long` parameters |
+Not the exercise. Two methods that do nothing but recurse:
+
+    static void trivial() { depth++; trivial(); }
+    static void four(long a, long b, long c, long d) { depth++; four(a+1, b+1, c+1, d+1); }
+
+Frames before `StackOverflowError`, three fresh JVMs per row (verified):
+
+| `-Xss` | `trivial()` | `four(long × 4)` |
 | --- | --- | --- |
-| 256k | 2,617 | 1,031 |
-| 512k | 9,200 | 3,426 |
-| 1m | 22,839 | 8,957 |
-| 4m | 100,462 | 40,998 |
-| default | 21,827 | 8,637 |
+| 256k | 3,644 · 1,796 · 3,644 | 1,402 · 1,039 · 1,402 |
+| 512k | 7,480 · 8,020 · 7,568 | 2,764 · 2,764 · 2,764 |
+| 1m | 20,234 · 20,474 · 20,730 | 6,863 · 7,290 · 7,592 |
+| 4m | 101,887 · 101,948 · 101,948 | 39,212 · 39,212 · 39,212 |
+| default | **16,820 · 10,732 · 23,306** | 8,964 · 6,213 · 8,964 |
 
-Two variables, not one: **stack size and frame size**. Four extra `long`s cost you 60% of your
-depth. So "recursion is fine up to about 10,000" is not a fact about Java, it is a fact about one
-method on one configuration.
+Three things to read in it:
 
-**And it is not even stable across runs.** The default-`-Xss` trivial count came out at **13,663**
-on one run and **21,827** on another, same machine, no flags changed. Thread stacks are not empty
-when your method is called, the JIT inlines differently once warm, and both move the number.
+- **Two variables, not one: stack size and frame size.** With the `-Xss` values above, four `long`
+  parameters cost about 60% of the depth. "Recursion is fine up to about 10,000" isn't a fact about Java. It's a fact about one
+  method on one configuration.
+- **The default row moved by a factor of two** across three runs, with nothing changed. How deep you
+  get depends on whether the JIT compiled the method before the stack ran out, because compiled
+  frames are smaller than interpreted ones, and that timing varies from run to run. Take the JIT
+  out of it and the numbers stop moving (verified, three runs each): `-Xint` (interpreter only)
+  gives **10,732 · 6,213** every time, exactly the low default run, and `-Xcomp` (compile before
+  the first call) gives **59,026 · 59,016**. Compiled, the four `long`s cost almost nothing.
+- `trivial()` is a tail call: calling itself is the last thing it does. It still overflowed, which
+  is the evidence that HotSpot doesn't eliminate tail calls. In Java, a self-recursive call is a
+  stack frame, always.
 
-### Which is why TODO 2 is a trap worth walking into
+## Part one: `StringRecursiveReversal`, depth is the input
 
-You will write a loop that catches `StackOverflowError` to find the limit. It works. **Then
-distrust the number**, for two reasons:
+    public String reverseString(String str){
+        if(str.isEmpty()) return str;
+        return reverseString(str.substring(1)) + str.charAt(0);
+    }
 
-- **Catching `StackOverflowError` is unsound.** It is an `Error`, not an `Exception`, and the JVM
-  gives no guarantee about what state you are in — the overflow can land mid-way through anything.
-  Code that continues after catching one is working by luck.
-- The number is not reproducible, as above.
+One frame per character, and a fresh `substring` per frame, so it's O(n²) in allocation too.
+Three facts about it, all verified:
 
-The test reflects this: it asserts the limit is **greater than 1,000 and finite**, and pins nothing.
-A test that pinned 21,827 would be a test that fails on a different machine for no reason.
+- **Its limit depends on how you look for it.** In the same JVM, doubling the length until it fails
+  and then bisecting found **3,839** characters, three runs out of three. Walking upward in steps of
+  250 found **19,500**, three out of three. That's a factor of five, from the method you used to
+  measure it. Doubling hits the overflow while the method is still interpreted; walking up slowly
+  gives the JIT time to compile it first.
+- **On a big enough input, it doesn't fail with a stack overflow.** At 500,000 characters, with
+  the default heap, it throws **`OutOfMemoryError: Java heap space`**. Every frame still on the
+  stack holds its own substring, and together they fill the heap before the stack runs out. With
+  `-Xmx16g`, the same call throws `StackOverflowError`. So the error type depends on the heap size.
+  At 50,000 and 100,000 characters it's `StackOverflowError`.
+- **It breaks characters outside the Basic Multilingual Plane.** `"a😀b"` reverses to the `char`s
+  `0062 DE00 D83D 0061`. The emoji's two halves (a *surrogate pair*) come out in the wrong order,
+  which isn't a valid string. `new StringBuilder(s).reverse()` gives `0062 D83D DE00 0061` and keeps
+  the pair together. `RecursionTest`'s agreement test uses only ASCII, so it can't tell the two
+  apart.
 
-**The real conclusion: if depth is a function of input size, do not recurse.** TODO 1 is the
-iterative version, and the assertion that matters is
-`the_iterative_version_handles_an_input_the_recursive_one_cannot` — 500,000 characters. It is not
-faster. It is *possible*.
+`RecursionTest` has six tests and is `@Disabled`. Delete that line to begin (verified). Commits, in
+this order:
 
-(The JDK has no tail-call elimination, and there is no JEP targeting it. A self-recursive call in
-Java is a stack frame, always.)
+1. **Characterize `reverseString`**: `""`, `"a"`, `"Java2novice"`, and `"a😀b"`, asserting today's
+   broken output for the last one. Green, and it records a bug.
+2. **TODO 1, `reverseIteratively`.** Same results with constant stack depth.
+   `the_iterative_version_handles_an_input_the_recursive_one_cannot` (500,000 characters) is the
+   assertion that matters. It isn't faster. **It's possible.** Then decide about the emoji. Agreeing
+   with the recursive version means copying its bug. Getting it right means the two versions
+   disagree, and the step 1 assertion flips. That's a behaviour change, so give it its own commit and
+   say so in the commit message.
+3. **TODO 2, `deepestReverseThatWorks`.** You'll write a loop that catches `StackOverflowError`.
+   It works. **Then distrust the number**, for three reasons. Catching `StackOverflowError` is
+   unsound: the JVM makes no promise about the state you're in when it's thrown, because it can
+   happen partway through anything, including inside a JDK method. The number depends on your search
+   strategy, as shown above. And on a large enough input the error is `OutOfMemoryError`, which your
+   `catch` won't catch. That's why the test asserts only `> 1000` and `< 10,000,000`, and pins
+   nothing.
 
-## Part two: the exponential, and the honest answer
+## Part two: `PascalsTriangleRecursive`, the exponential and the honest answer
 
-`cellValue(column, row)` recurses twice per call with no memoisation. Calls for a single cell:
+`cellValue(column, row)` (lines 41-46) recurses twice per call, with no memoisation. Calls for one
+cell, and for whole triangles (verified, three runs):
 
-| cell | calls | time |
+| what | calls | time |
 | --- | --- | --- |
-| (3, 6) | 29 | — |
-| (3, 10) | 89 | — |
-| (10, 20) | 335,919 | — |
-| (15, 30) | **290,845,349** | ~1 s |
-| all of row 30 | **2,147,483,616** | 3,274 ms |
+| cell (3, 6) | 29 | — |
+| cell (3, 10) | 89 | — |
+| cell (10, 20) | 335,919 | — |
+| cell (15, 30) | **290,845,349** | 0.45–0.52 s |
+| row 30, every cell | **2,147,483,616** | 3.3–3.8 s |
+| rows 1–25 | 134,217,349 | 0.24–0.28 s |
+| rows 1–27 | 536,870,476 | 0.96–1.2 s |
+| rows 1–30 | 4,294,966,767 | 7.5–7.8 s |
 
-Roughly doubling per row. TODO 3 memoises it and row 30 becomes microseconds.
+The count roughly doubles with each extra row. The first three rows are what
+`the_call_count_is_exponential_in_the_row` asserts.
 
-**TODO 4 is the one with the uncomfortable answer.** The repo's own entry point is
-`printPascal(6)`, in `main`. That costs **120 calls and runs instantly.**
+Commits, in this order:
 
-So: the code is exponential, and at the only size it is ever used at, **fixing it is worth
-nothing.** Both halves of that are true and you should be able to hold them at once. Memoising it
-is three lines and harmless; rewriting it iteratively is a change you cannot justify from the
-usage. What you *can* justify is knowing the cliff is at about row 25, so that nobody wires this to
-a user-supplied number.
+1. **Characterize first.** `cellValue` is private, so pin `printPascal(6)`'s output (capture
+   `System.out`). Those are the only values the repo actually uses.
+2. **TODO 4, `countCellValueCalls`**, so you can measure before you change anything.
+3. **TODO 3, `cellValueMemoized`.** Row 30 drops from seconds to about **4–5 ms** in a fresh JVM
+   (verified, a `HashMap` memo). **The old version of this doc said microseconds**, and the javadoc
+   in `Recursion.java` still does. Cold, most of the cost is class loading and boxing, not the
+   arithmetic. That's still about 750 times faster.
 
-This is the counterweight to [stage 07](07-accidental-quadratics.md): there, the honest answer at
-n=100 was "it does not matter"; here it is the same answer about an exponential. **Complexity is a
-property of the code; cost is a property of the code *and the input*.**
+**Then TODO 4's question, which has the uncomfortable answer.** The repo's only caller is `main`,
+which calls `printPascal(6)`. **That's 219 calls** (verified), and it runs instantly. (The old
+version of this doc said 120. That's the count for row 6 alone; `printPascal(6)` computes rows 1 to
+6.)
+
+So the code is exponential, and at the only size it's ever used at, **fixing it is worth nothing.**
+Both halves of that are true, and you should be able to hold both at once. Memoising is a few lines
+and harmless. Rewriting it iteratively is a change the usage can't justify. What you *can* justify
+is knowing where the cliff is: about a quarter of a second for 25 rows, a second at 27, and doubling
+from there. Then nobody wires this to a number a user supplies.
+
+This is the counterweight to [stage 07](07-accidental-quadratics.md). There, the honest answer at
+n = 100 was "it doesn't matter", and here it's the same answer about an exponential. **Complexity is
+a property of the code. Cost is a property of the code and its input.**
 
 ## What got worse
 
 - _(fill this in)_
 - _(fill this in)_
 
-Prompts: a memoised recursion trades stack for heap and the map outlives the call — when is that
-the wrong trade? If you cannot catch `StackOverflowError` safely and cannot predict the depth, how
-would you make a recursive parser safe against hostile input? `printPascal(6)` costs 120 calls:
-what would you write in a code review, given fixing it is unjustified and leaving it is a trap?
-Where is the line between "deep recursion" and "recursion whose depth is the input"?
+Prompts: a memoised recursion trades stack for heap, and the map outlives the call. When is that the
+wrong trade? If you can't catch `StackOverflowError` safely and can't predict the depth, how would
+you make a recursive parser safe against hostile input? `printPascal(6)` costs 219 calls: what would
+you write in a code review, given that fixing it isn't justified and leaving it is a trap? Your
+iterative reverse either copies the emoji bug or disagrees with the code it replaced. Which one
+did you choose, and who else would need to know? Where's the line between "deep recursion" and
+"recursion whose depth is the input"?
