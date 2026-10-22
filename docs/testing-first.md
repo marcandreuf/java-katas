@@ -143,6 +143,15 @@ The last four are the honest exception: `generics/` wraps a web driver this repo
 on, so there is nothing to test without adding one. [Doc 01](modernization/01-records.md) asks you
 to look at `PageObject`, not to rewrite it.
 
+## When the compiler can prove it instead
+
+One kind of change needs no test, because you can prove it changed nothing: a change that leaves
+every class file **byte-identical**. Adding the diamond (`new ArrayList<>()`) is the only one in
+the track. [Doc 05](modernization/05-var.md) gives the before-and-after `javac` and `diff -r`
+commands, and the result goes in the commit message. That proof is what replaces the test. If you
+haven't run the `diff`, you don't have the exception. `var` does *not* qualify: it can change the
+static type, and with it the bytecode.
+
 ## The one thing not to do
 
 Do not write the test *after* the refactor and call it covered. A test written against code you
