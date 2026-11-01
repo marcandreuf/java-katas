@@ -7,9 +7,9 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OrderTest {
 
     @Test
-    void constructor_without_complaint(){
-        assertDoesNotThrow(()->new Order(null,"1"));
-        assertDoesNotThrow(()->new Order(" ","1"));
+    void should_not_create_orders_with_blank_names(){
+        assertThrowsExactly(IllegalArgumentException.class, ()->new Order(null,"1"));
+        assertThrows(IllegalArgumentException.class, ()->new Order(" ","1"));
     }
 
     @Test
