@@ -16,14 +16,14 @@ public class OrderTest {
     void two_equal_orders(){
         Order o1 = new Order("a",1);
         Order o2 = new Order("a",1);
-        assertNotEquals(o1, o2);
+        assertEquals(o1, o2); // With records the equality is provided and compares value attributes.
     }
 
     @Test
     void print_order_to_string_has_at_symbol(){
         String o1String = new Order("a",1).toString();
         System.out.println("o1string: "+o1String);
-        assertTrue(o1String.contains("Order@"));
+        assertTrue(o1String.contains("name=a")); // With records the toString is also provided and prints the values
     }
 
 
