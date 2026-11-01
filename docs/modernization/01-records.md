@@ -174,6 +174,86 @@ border combination", which is sixteen classes; the record is one line. Read it a
 alone, because [DSA stage 11](../dsa/11-reachability.md) owns them. It also shows that a record can
 have static factories (`Cell.open()`, `Cell.closed()`) and ordinary methods (`blocks`).
 
+## Part three: three experiments to feed "What got worse"
+
+Parts one and two show where a record fits. These three show what it costs, and they are where
+your "What got worse" lines come from. Nothing in the repo needs them, so write them as **learning
+tests**: one test class, `src/test/java/org/mandfer/practices/modern/RecordLimitsTest.java`, with
+the records nested inside it. Commit it or throw it away afterwards; it changes no production code.
+
+**Before you run each step, write down what you expect.** A wrong prediction is the line worth
+keeping. Every outcome below was checked on JDK 26, but the outputs are left out on purpose.
+
+### Experiment A: shallow immutability, with `Basket`
+
+    record Basket(List<String> items) {}
+
+The field is `final`. That makes the *reference* final, not the list it points to.
+
+1. **The caller keeps the list.** Build an `ArrayList` holding `"apple"`, pass it to a `Basket`,
+   then add `"pear"` to *your* list. Assert what `basket.items()` contains.
+2. **The reader gets the list.** Call `basket.items().add("plum")`. Does it compile? Does it throw?
+   What does the basket hold now?
+3. **Break a `HashSet`.** Put a basket in a `HashSet`, then mutate the list it was built from. Ask
+   the set `contains(basket)`, about the very same object. Then explain the answer using what
+   Part one taught you about how a record's `hashCode` is computed. (This is the `HashMap` key
+   warning from Part one, step 2, arriving by a side door.)
+4. **Fix it in a compact constructor, two ways.** Reassign the parameter, as in Part one, step 4:
+   - first with `items = Collections.unmodifiableList(items);`
+   - then with the one-call answer from [doc 16](16-collection-factories.md).
+
+   Rerun steps 1 and 2 against each version. **They are not equivalent**: one of them still
+   fails step 1. Find out which, and why the word "view" in its Javadoc explains it. Then pass the
+   second version a list containing a `null`.
+5. **Equality across list types.** Is `new Basket(new ArrayList<>(List.of("a")))` equal to
+   `new Basket(List.of("a"))`? Predict, then check, for the unfixed record and the fixed one.
+
+The line to take away is not "records are not immutable". It is about whose job immutability is,
+and what you had to remember to write.
+
+### Experiment B: seven components, and no builder
+
+    record Shipment(String orderId, String customer, String street, String city,
+                    String postcode, int weightGrams, boolean express) {}
+
+1. **Write the call site.** Create one `Shipment` in a test. Read it back a day later: without
+   the IDE's parameter hints, which argument is the city?
+2. **Swap two arguments.** Pass the postcode where the city goes. Does it compile? Does any
+   `equals` or `toString` complain? What would have to exist for a test to catch it?
+3. **Add an eighth component** (say, `String country`). Count the call sites that stop compiling.
+   In a real codebase, how many would there be?
+4. **Try the usual fixes and judge each one:**
+   - a nested static `Builder` class, written by hand. How many lines is it, compared with the
+     one-line record it builds? Did you just write back the boilerplate the record removed?
+   - `withCity(String city)`-style methods that return a copy. How many do you need for seven
+     components?
+   - splitting the record: does `street`, `city` and `postcode` want to be its own `Address`
+     record? Does that fix steps 1 and 2, or only make them smaller?
+
+   There is no `p with { x = 3; }` syntax in JDK 26, not even as a preview (verified). Each of
+   these fixes is code you write and maintain.
+
+### Experiment C: becoming mutable later
+
+Suppose next month an `Order` needs a status that moves from `NEW` to `PAID` to `SHIPPED`. Use your
+Part one record as the starting point, on a scratch branch.
+
+1. **Add the component.** Add `Status status` to the record. Count what stops compiling: every
+   `new Order(...)`, and any record pattern such as `case Order(var name, var code)` (doc 03
+   introduces those; write one in the test to see it).
+2. **Try to change it.** There is no setter, and `this.status = ...` won't compile. Write
+   `withStatus(Status s)` returning a new `Order`. Now one order paid in one place is still `NEW`
+   wherever another reference to it is held. Compare this with `Door` in Part two.
+3. **Ask the equality question.** Is a paid order equal to the same order before payment? The
+   record says no, because `status` is a component. Is that what a `Set<Order>` of open orders
+   should do?
+4. **Convert it back to a class.** Write out what you now owe by hand: accessors, `equals`,
+   `hashCode`, `toString`, and a decision about whether `status` takes part in `equals`.
+5. **Compare with the 2014 class.** Do the same change to a copy of the original `Order`: add a
+   field and a setter. What broke?
+
+Write down the cost of each route in a sentence. That comparison is the third experiment's line.
+
 ## What got worse
 
 - _(fill this in)_
