@@ -1,5 +1,6 @@
 package org.mandfer.practices.modern;
 
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -13,7 +14,23 @@ import static org.junit.jupiter.api.Assertions.*;
  * Part 3 of 01-records.md
  */
 public class RecordLimitsTest {
+
+    enum OrderStatus {PLACED, PAID, SHIPPED, DELIVERED, CANCELLED}
+
     record Basket(List<String> items) {}
+    record OrderShipment(String orderId, String express, int weightGrams, OrderStatus orderStatus){
+
+        OrderShipment(String orderId, String express, int weightGrams){
+            this(orderId, express, weightGrams, OrderStatus.PLACED);
+        }
+
+        public OrderShipment shipped(){
+            return new OrderShipment(orderId(), express(), weightGrams(), OrderStatus.SHIPPED);
+        }
+
+    }
+    record CustomerShipment(String customer){}
+    record AddressShipment(String street, String city, String postcode){}
 
     @Test
     public void experiment_A_shallow_immutability() {
@@ -94,12 +111,41 @@ public class RecordLimitsTest {
             }
         }
 
-        record OrderShipment(String orderId, String express, int weightGrams){}
-        record CustomerShipment(String customer){}
-        record AddressShipment(String street, String city, String postcode){}
+
         record ShipmentCompose(OrderShipment orderShipment, CustomerShipment customerShipment,
                         AddressShipment addressShipment){}
 
 
     }
+
+    @Test
+    public void experiment_C_becoming_mutable(){
+        /*
+        1. To add a status component to the Order record and avoid major refactoring we could
+        add multiple constructors of the record where we can define the default value
+        of any new component.
+         */
+        OrderShipment orderShipmentWithStatus = new OrderShipment("01", "yes",
+                10, OrderStatus.DELIVERED);
+
+        OrderShipment orderShipmentDefaultStatus = new OrderShipment("02", "no", 12);
+
+        /*
+        * 2. Well records are targeted to be used as immutable value objects, so if we need to change state we
+        * may need to consider refactoring to adapting the record to a normal class.
+        * */
+
+        /*
+        3. The OrderShipment records with different status will be not equals.
+         */
+        OrderShipment orderShipmentShipped = orderShipmentDefaultStatus.shipped();
+        assertNotEquals(orderShipmentDefaultStatus, orderShipmentShipped);
+
+        /*
+        4 and 5. Yes going back to a class we go back to mutability and all the necessary implementations
+        for all the methods that we get with a records type.
+         */
+
+    }
+
 }
