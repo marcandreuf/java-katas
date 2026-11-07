@@ -16,6 +16,14 @@ import javax.tools.Tool;
  *         the entire value of this exercise. Then delete the fifth variant again.
  */
 
+/**
+ * What got worse:
+ *
+ * Rule of thumb: seal when the hierarchy is something your module controls and the variants rarely change,
+ * such as protocol messages, AST nodes, or state machines like your DoorState. Don’t seal when the hierarchy
+ * is meant to be extended by code you don’t own.
+ */
+
 sealed interface ToolCallResult permits ToolCallResult.Ok, ToolCallResult.Denied,
         ToolCallResult.Failed, ToolCallResult.Timeout, ToolCallResult.Cancelled {
 
