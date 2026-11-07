@@ -1,5 +1,7 @@
 package org.mandfer.practices.sealedtypes;
 
+import javax.tools.Tool;
+
 /**
  * Four outcomes of one call, modelled as a closed set of types.
  *
@@ -13,14 +15,36 @@ package org.mandfer.practices.sealedtypes;
  * TODO 4: add a fifth variant and watch the compiler point at route(). That failure is
  *         the entire value of this exercise. Then delete the fifth variant again.
  */
-public interface ToolCallResult {
 
-    record Ok(String payload) implements ToolCallResult {}
+sealed interface ToolCallResult permits ToolCallResult.Ok, ToolCallResult.Denied,
+        ToolCallResult.Failed, ToolCallResult.Timeout, ToolCallResult.Cancelled {
+
+    final class Ok implements ToolCallResult {
+        private String payload;
+        Ok(String payload){
+            this.payload = payload;
+        }
+
+        public String getPayload() {
+            return payload;
+        }
+
+        public void setPayload(String payload) {
+            this.payload = payload.concat(this.payload);
+        }
+    }
     record Denied(String reason) implements ToolCallResult {}
     record Failed(String message, int attempts) implements ToolCallResult {}
     record Timeout(long afterMillis) implements ToolCallResult {}
+    record Cancelled() implements ToolCallResult {}
 
     static String route(ToolCallResult result) {
-        throw new UnsupportedOperationException("TODO 3");
+        return switch (result){
+            case ToolCallResult.Ok o -> { o.setPayload("set:ok:"); yield o.getPayload();}
+            case ToolCallResult.Denied d -> "denied:"+d.reason;
+            case ToolCallResult.Failed f -> "failed:"+f.message+":"+f.attempts;
+            case ToolCallResult.Timeout t -> "timeout:"+t.afterMillis;
+            case ToolCallResult.Cancelled _ -> "cancelled";
+        };
     }
 }
