@@ -24,5 +24,7 @@ public class DecimalToBinaryTest {
         assertEquals("11111111", dtb.conversion(255,2));
         assertEquals("", dtb.conversion(0,2));
         assertEquals("", dtb.conversion(-5,2));
+        assertEquals("10000000000000000000000000",
+                dtb.conversion(33554432, 2));
     }
 }
