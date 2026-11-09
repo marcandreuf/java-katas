@@ -23,6 +23,6 @@ public class DecimalToBinaryTest {
         assertEquals("1010", dtb.conversion(10,2));
         assertEquals("11111111", dtb.conversion(255,2));
         assertEquals("", dtb.conversion(0,2));
-        //assertEquals("", dtb.conversion(-5,2));
+        assertEquals("", dtb.conversion(-5,2));
     }
 }

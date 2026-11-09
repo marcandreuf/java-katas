@@ -20,14 +20,14 @@ public class DecimalToBinary {
 
     public String conversion(int number, int base){
         StringBuilder sbResult = new StringBuilder();
-        int binary[] = new int[25];
+        int arrInts[] = new int[25];
         int index = 0;
         while(number > 0){
-            binary[index++] = number%base;
+            arrInts[index++] = number%base;
             number = number/base;
         }
         for(int i = index-1;i >= 0;i--){
-            sbResult.append(binary[i]);
+            sbResult.append(arrInts[i]);
         }
         return sbResult.toString();
     }
