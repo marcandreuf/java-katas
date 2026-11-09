@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 
  * [Source http://rosettacode.org]
  * 
- * @author marcandreuf@gmail.com
+ * @author marcandreuf
  *
  */
 
