@@ -22,6 +22,10 @@ public class DecimalToBinary {
         StringBuilder sbResult = new StringBuilder();
         int arrInts[] = new int[31];
         int index = 0;
+        if (number == 0)
+            return "0";
+        if (number < 0)
+            throw new IllegalArgumentException("We can only covert positive numbers.");
         while(number > 0){
             arrInts[index++] = number%base;
             number = number/base;
