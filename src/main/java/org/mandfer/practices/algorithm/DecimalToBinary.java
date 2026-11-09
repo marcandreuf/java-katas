@@ -31,7 +31,7 @@ public class DecimalToBinary {
             number = number/base;
         }
         for(int i = index-1;i >= 0;i--){
-            sbResult.append(arrInts[i]);
+            sbResult.append(Character.forDigit(arrInts[i], base));
         }
         return sbResult.toString();
     }

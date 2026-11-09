@@ -12,8 +12,8 @@ public class DecimalToBinaryTest {
     @Test
     void characterization_Hex_tests(){
         assertEquals("19", dtb.conversion(25));
-        assertEquals("10", dtb.conversion(10));
-        assertEquals("1515", dtb.conversion(255));
+        assertEquals("a", dtb.conversion(10));
+        assertEquals("ff", dtb.conversion(255));
         assertEquals("0", dtb.conversion(0));
     }
 
@@ -25,11 +25,14 @@ public class DecimalToBinaryTest {
         assertEquals("0", dtb.conversion(0,2));
         assertEquals("10000000000000000000000000",
                 dtb.conversion(33554432, 2));
+        assertEquals("1111111111111111111111111111111",
+                dtb.conversion(Integer.MAX_VALUE, 2)); // All 31 digits.
     }
 
     @Test
-    void only_poisitive_conversions(){
+    void only_positive_conversions(){
         assertThrows(IllegalArgumentException.class, ()-> dtb.conversion(-5));
         assertThrows(IllegalArgumentException.class, ()-> dtb.conversion(-5, 2));
+
     }
 }
