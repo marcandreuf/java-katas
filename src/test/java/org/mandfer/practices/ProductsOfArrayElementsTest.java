@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *  the product of the elements of the input array except the ith element.
  *  
  *  
- * @author marcandreuf@gmail.com
+ * @author marcandreuf
  *
  */
 

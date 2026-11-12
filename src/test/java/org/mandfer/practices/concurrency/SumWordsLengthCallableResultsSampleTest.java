@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.*;
 /**
  * This is a sample exercise about how to use Callable objects.
  * 
- * @author marcandreuf@gmail.com
+ * @author marcandreuf
  *
  */
 public class SumWordsLengthCallableResultsSampleTest {
