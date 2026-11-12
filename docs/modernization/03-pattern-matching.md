@@ -216,8 +216,18 @@ Two things to do before you change it:
 - _(fill this in)_
 - _(fill this in)_
 
-Prompts: at what nesting depth does a record pattern stop being readable? What does a long pattern
-switch do to a diff when one variant changes? A record pattern names every component in order:
-what happens to every `case` that takes `Failed` apart when someone adds a third component to it,
-and how does that compare with the accessor version? Guards move logic into `case` labels: when is
-a `when` clause clearer than an `if` inside the case body, and when is it hiding a decision?
+Prompts: at what nesting depth does a record pattern stop being readable? 
+
+- What does a long pattern switch do to a diff when one variant changes?
+    1 or 2 levels max for readability.
+
+- A record pattern names every component in order: what happens to every `case` that takes `Failed` apart when 
+someone adds a third component to it, and how does that compare with the accessor version?
+    Adding a variant to the record allowed types can have wider effect on all many files. At the same time we get more
+    information about potential issues before compile time as the IDEs can help us analyze the exhaustiveness of a
+    switch statement or expression.
+
+  - Guards move logic into `case` labels: when is a `when` clause clearer than an `if` inside the case body, 
+  and when is it hiding a decision?
+    We should use when clause for routing outcomes. So different case clauses generate different flows or results. 
+    
