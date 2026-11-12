@@ -4,8 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.mandfer.practices.Door;
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 100 doors in a row are all initially closed. You make
@@ -104,6 +103,14 @@ public class The100DoorsCyberDojoTest{
 			sb.append((i+1)+":"+doors.get(i)+"\n");
 		}
 		System.out.println(sb.toString());
+	}
+
+	@Test
+	void should_print_the_door_status(){
+		Door d = new Door();
+		assertEquals(Door.CLOSED, d.toString());
+		d.toggle();
+		assertEquals(Door.OPEN, d.toString());
 	}
 
 }

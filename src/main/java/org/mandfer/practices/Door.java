@@ -1,6 +1,8 @@
 package org.mandfer.practices;
 
 public class Door {
+	public static String OPEN = "open";
+	public static String CLOSED = "closed";
 
 	private boolean open;
 
@@ -16,10 +18,11 @@ public class Door {
 		open = !open;
 	}
 
+	@Override
 	public String toString() {
 		if(open)
-			return "open"; 
+			return OPEN;
 		else 
-			return "close";
+			return CLOSED;
 	}
 }
