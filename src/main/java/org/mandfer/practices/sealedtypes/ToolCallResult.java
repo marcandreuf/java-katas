@@ -48,11 +48,12 @@ sealed interface ToolCallResult permits ToolCallResult.Ok, ToolCallResult.Denied
 
     static String route(ToolCallResult result) {
         return switch (result){
-            case ToolCallResult.Ok o -> { o.setPayload("set:ok:"); yield o.getPayload();}
-            case ToolCallResult.Denied d -> "denied:"+d.reason;
-            case ToolCallResult.Failed f -> "failed:"+f.message+":"+f.attempts;
-            case ToolCallResult.Timeout t -> "timeout:"+t.afterMillis;
-            case ToolCallResult.Cancelled _ -> "cancelled";
+            case Ok o -> { o.setPayload("set:ok:"); yield o.getPayload();}
+            case Denied(String reason) -> "denied:"+reason;
+            case Failed(var m, int n) when n > 3 -> "gave up: " + m;
+            case Failed(var message, var attempts) -> "failed:"+message+":"+attempts;
+            case Timeout(var afterMillis) -> "timeout:"+afterMillis;
+            case Cancelled _ -> "cancelled";
         };
     }
 }
