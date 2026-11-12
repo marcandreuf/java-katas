@@ -215,3 +215,6 @@ method around it? A switch expression with block bodies and `yield`: at what siz
 have an `if`/`else`? The 1996 fall-through was occasionally intended (two labels sharing code):
 the arrow form gives you `case A, B ->` for that, so is there anything the old form could do that
 the new one can't?
+
+The old switch could be more expressive when we need to fall through and when we need to fall through for different 
+values to cover a wider scope of cases. For example we want to cover case 1,2 and 3 to be processed. 

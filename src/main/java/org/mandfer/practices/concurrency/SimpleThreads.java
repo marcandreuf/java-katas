@@ -22,6 +22,12 @@ public class SimpleThreads {
 		}
 	}
 
+	static String usage(){
+		return """
+				Argument must be
+				an integer.""";
+	}
+
 	public static void main(String args[]) throws InterruptedException {
 		long defaultDelayInMiliseconds = 1000 * 60 * 60;
 
@@ -29,7 +35,7 @@ public class SimpleThreads {
 			try {
 				defaultDelayInMiliseconds = Long.parseLong(args[0]) * 1000;
 			} catch (NumberFormatException e) {
-				System.err.println("Argument must be an integer.");
+				System.err.println(usage());
 				System.exit(1);
 			}
 		}
