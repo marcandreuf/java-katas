@@ -54,6 +54,7 @@ sealed interface ToolCallResult permits ToolCallResult.Ok, ToolCallResult.Denied
             case Failed(var message, var attempts) -> "failed:"+message+":"+attempts;
             case Timeout(var afterMillis) -> "timeout:"+afterMillis;
             case Cancelled _ -> "cancelled";
+            case null, default -> "Not found";
         };
     }
 }
