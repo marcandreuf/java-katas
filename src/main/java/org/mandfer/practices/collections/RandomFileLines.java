@@ -51,7 +51,7 @@ public class RandomFileLines {
 			File fin = new File(fileName);
 			FileReader freader = new FileReader(fin);			
 			long listSize = (fin.length()/avgCharsPerLine)*2;			
-			List<String> lstLines = new ArrayList<String>((int)listSize);
+			List<String> lstLines = new ArrayList<>((int)listSize);
 			br = new BufferedReader(freader);	    
 			String line = "";
 	

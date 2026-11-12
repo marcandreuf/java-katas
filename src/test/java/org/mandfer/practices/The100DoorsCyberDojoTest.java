@@ -42,7 +42,7 @@ public class The100DoorsCyberDojoTest{
 	}
 
 	private List<Door> initDoors() {
-		List<Door> lstDoors = new ArrayList<Door>(100);
+		List<Door> lstDoors = new ArrayList<>(100);
 		for(int i=0; i<100; i++){
 			lstDoors.add(i, new Door());
 		}

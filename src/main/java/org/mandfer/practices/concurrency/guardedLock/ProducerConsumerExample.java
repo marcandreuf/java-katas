@@ -10,7 +10,7 @@ public class ProducerConsumerExample {
     public static void main(String[] args) {
         //Drop drop = new Drop(); //Is the shared object.
         
-    	BlockingQueue<String> bq = new SynchronousQueue<String>();
+    	BlockingQueue<String> bq = new SynchronousQueue<>();
     	
         Consumer c = new Consumer(bq);
         Producer p = new Producer(bq);
