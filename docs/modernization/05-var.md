@@ -188,8 +188,15 @@ browser, it costs a click per variable.
 - _(fill this in)_
 - _(fill this in)_
 
-Prompts: what does `var` do to a review in a browser with no type hints? Where did it change the
-static type from an interface to a class, and does anything in that method now depend on the
-class? [Doc 27](27-module-imports-and-compact-sources.md) asks you to make the same kind of call
-about module imports. Write down the rule you used here, so you can check whether you apply it
-consistently there.
+Prompts: 
+
+- What does `var` do to a review in a browser with no type hints?
+  The Code review can be more difficult to read or catch potential bugs.
+
+- Where did it change the static type from an interface to a class, and does anything in that method now depend on the
+class? [Doc 27](27-module-imports-and-compact-sources.md) asks you to make the same kind of call about module imports. 
+  I like to use types on both sides when using collections to make the code
+  more explicit. 
+
+- Write down the rule you used here, so you can check whether you apply it consistently there.
+  Only use var when the type is obvious in the same line of code. 

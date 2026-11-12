@@ -11,7 +11,7 @@ public class ArgsRandom {
 	public static void main(String[] args){
 		List<String> lstArgs = new ArrayList<>(Arrays.asList(args));
 		Collections.shuffle(lstArgs);		
-		for(String str : lstArgs){
+		for(var str : lstArgs){
 			System.out.println(str);
 		}
 		

@@ -48,8 +48,8 @@ public class RandomFileLines {
 			throws Exception {
 		BufferedReader br = null;
 		try{
-			File fin = new File(fileName);
-			FileReader freader = new FileReader(fin);			
+			var fin = new File(fileName);
+			var freader = new FileReader(fin);
 			long listSize = (fin.length()/avgCharsPerLine)*2;			
 			List<String> lstLines = new ArrayList<>((int)listSize);
 			br = new BufferedReader(freader);	    
