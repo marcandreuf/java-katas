@@ -50,11 +50,12 @@ sealed interface ToolCallResult permits ToolCallResult.Ok, ToolCallResult.Denied
         return switch (result){
             case Ok o -> { o.setPayload("set:ok:"); yield o.getPayload();}
             case Denied(String reason) -> "denied:"+reason;
-            case Failed(var m, int n) when n > 3 -> "gave up: " + m;
+            case Failed(var m, int n) when n > 3 -> "gave up:" + m;
             case Failed(var message, var attempts) -> "failed:"+message+":"+attempts;
             case Timeout(var afterMillis) -> "timeout:"+afterMillis;
             case Cancelled _ -> "cancelled";
-            case null, default -> "Not found";
+            /*Activating this case switches off the exhaustiveness check of the compiler. */
+            //case null, default -> "Not found";
         };
     }
 }

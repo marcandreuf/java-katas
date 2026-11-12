@@ -1,8 +1,8 @@
 package org.mandfer.practices;
 
 public class Door {
-	public static String OPEN = "open";
-	public static String CLOSED = "closed";
+	public static final String OPEN = "open";
+	public static final String CLOSED = "closed";
 
 	private boolean open;
 

@@ -1,9 +1,6 @@
 package org.mandfer.practices.concurrency;
 
 import org.junit.jupiter.api.Test;
-
-import java.util.OptionalDouble;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OrderTest {
