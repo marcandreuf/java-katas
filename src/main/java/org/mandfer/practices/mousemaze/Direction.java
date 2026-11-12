@@ -37,4 +37,18 @@ public enum Direction {
             case LEFT -> RIGHT;
         };
     }
+
+
+    public Direction opposite1996() {
+        Direction result;
+        switch (this){
+            case UP: result = DOWN; break;
+            case RIGHT: result = LEFT; break;
+            case DOWN: result = UP; break;
+            //case LEFT: result = RIGHT; break;
+            default: result = RIGHT; // LEFT case as well
+        }
+        return result;
+
+    }
 }
