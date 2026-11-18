@@ -55,7 +55,7 @@ One line that used the array afterwards fixed it (verified). Same mistake, diffe
 
 `ForkBlur.java:115-117` times the blur with `System.currentTimeMillis()` around one
 `pool.invoke`. That's the repo's one stopwatch. **A correction to the old version:** it named
-`SimpleThreads.java:38` as a second. That line uses `currentTimeMillis()` as a timeout ("give up
+`SimpleThreads.java:44` as a second. That line uses `currentTimeMillis()` as a timeout ("give up
 after this long"), not to measure anything. And `RandomFileLines.java:32` uses it as a `Random`
 seed, which is [doc 19](19-randomness-and-numerics.md)'s problem.
 

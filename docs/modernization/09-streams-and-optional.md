@@ -36,7 +36,7 @@ a lambda that mutates something outside itself. That's a loop with extra syntax.
 
 `collections/FindDups.java:20-25`, written in 2014:
 
-    SortedSet<String> s = new TreeSet<String>(comparator);   // comparator: compareToIgnoreCase
+    SortedSet<String> s = new TreeSet<>(comparator);   // comparator: compareToIgnoreCase
     for (String a : args)
         if (!s.add(a))
             System.out.println("Duplicate detected: " + a);

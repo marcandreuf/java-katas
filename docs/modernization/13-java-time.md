@@ -3,7 +3,7 @@
 **Java 8** (`java.time`, JSR 310) · `InstantSource` is **Java 17** · stage 2 of
 [the release-ordered track](INDEX.md) · compiles at `--release 21`, no build change
 
-> **No safety net:** `ForkBlur`, `SimpleThreads` have no tests. Write them first, in a separate
+> **No safety net:** `ForkBlur` has no tests, and `SimpleThreadsTest` only covers `usage()` (doc 04), not the wait loop. Write them first, in a separate
 > commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md)
 > says how, and why the order matters. `Schedule` is new code with its tests already written.
 
@@ -89,13 +89,13 @@ that clock, and never from `System.currentTimeMillis()`. The test builds `Schedu
 `Clock.fixed(2026-10-15T08:00:00Z)`, so its two `until` tests run in milliseconds with no
 `sleep` (verified, against a scratch implementation).
 
-Then look at the old code that needs the same thing, `concurrency/SimpleThreads.java:38-53`. It
+Then look at the old code that needs the same thing, `concurrency/SimpleThreads.java:44-59`. It
 waits for a thread, and it gives up after a timeout built from subtracted millis:
 
-    long startTime = System.currentTimeMillis();                       // line 38
+    long startTime = System.currentTimeMillis();                       // line 44
     ...
     while (t.isAlive()) {
-        t.join(1000);                                                  // line 45
+        t.join(1000);                                                  // line 51
         if (((System.currentTimeMillis() - startTime) > defaultDelayInMiliseconds) && t.isAlive()) {
             t.interrupt(); t.join();
         }

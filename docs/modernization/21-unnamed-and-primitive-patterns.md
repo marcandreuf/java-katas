@@ -108,17 +108,17 @@ are bugs. The bugs part is right: `Consumer.java:28`, `Drop.java:23` and `:44`, 
 makes you fix them, not tidy them. Putting `_` there would make a swallowed interrupt look
 deliberate.
 
-But there is a real one. `concurrency/SimpleThreads.java:31`:
+But there is a real one. `concurrency/SimpleThreads.java:37`:
 
     } catch (NumberFormatException e) {
-        System.err.println("Argument must be an integer.");
+        System.err.println(usage());
         System.exit(1);
     }
 
 The exception is handled, and `e` is never read. It's exactly TODO 3, in code from 2014. Every
 other `catch` in `src/main` either reads its exception or is one of the bugs above (`grep`).
 
-`SimpleThreads` has no test, and **this change doesn't need one**. Compile it both ways, with
+`SimpleThreadsTest` covers only `usage()` (doc 04), not this `catch`, and **this change doesn't need a test**. Compile it both ways, with
 `-g -parameters --release 26` as Maven does (verified):
 
 - `javap -c` is **identical**: not one instruction changes.

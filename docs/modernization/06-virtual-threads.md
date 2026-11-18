@@ -3,9 +3,37 @@
 **Java 21** (preview in 19 and 20) · **JDK 24** changed what pins (JEP 491) · concept stage 06 of
 [the concept order](00-start-here.md) · no build change
 
-> **No safety net:** `OrdersProcessingSystem`, `SimpleThreads` have no tests. Write them first,
+> **No safety net:** `OrdersProcessingSystem` has no tests, and `SimpleThreads` has only
+> `SimpleThreadsTest`, which covers `usage()` (doc 04) and none of the threading. Write them first,
 > in a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why
 > the order matters.
+
+## Before you start: what this doc reuses from 03–05
+
+Answer each one in a line, without looking back. If you can't, reread the doc in brackets
+before you start. Every one of these comes up again below.
+
+1. **`var` (doc 05).** Part one's worked example is
+   `try (var executor = Executors.newVirtualThreadPerTaskExecutor())`. What static type does
+   `executor` get, and is it the type you would have written? Does it pass your own rule from
+   doc 05 ("only when the type is obvious in the same line")? Then check that rule against
+   `for (var str : lstArgs)` in `ArgsRandom.java:14`, which you wrote. Either the rule or the line
+   has to change.
+2. **The diamond (doc 05).** Part one rewrites `SumWordsLength`, and line 28 still says
+   `new HashSet<Future<Integer>>()`. It was in the diamond table and it's still there. Why must it
+   go in its own commit, **before** part one's, with the `javac` + `diff -r` evidence, and not
+   inside the virtual-thread commit?
+3. **Which changes count as proved (doc 05 part one, [`../testing-first.md`](../testing-first.md)).**
+   Part three says the threading is "covered by the concurrency rule". Say in one sentence how
+   that differs from doc 05's diamond exception. One of them proves the change; the other only
+   writes down that it is untested.
+4. **What `default` does (doc 04 part one).** `Direction.opposite1996()` uses `default` to stand in
+   for `LEFT`. Add a fifth constant to `Direction`: which of the two `opposite` methods stops
+   compiling, and what does the other one return? Part one's `catch (Exception e)` that returns 0
+   is the same mistake in a different form, a branch that hides the case it should report. Say why.
+5. **The text-block margin (doc 04 part two).** Part three relies on `SimpleThreadsTest` still
+   passing. Without running it, what does `usage()` return if you move the closing `"""` onto its
+   own line, one tab to the left of the text?
 
 ## What this stage is actually about
 
@@ -152,7 +180,7 @@ old advice to avoid `synchronized` is now wrong.**
 
 ## Part three: `SimpleThreads` on a virtual thread
 
-`concurrency/SimpleThreads.java:39` starts its worker as `new Thread(new MessageLoop())`. Change
+`concurrency/SimpleThreads.java:45` starts its worker as `new Thread(new MessageLoop())`. Change
 it to `Thread.ofVirtual().unstarted(new MessageLoop())` in a scratch copy and run it with `5`
 (give up after five seconds). Verified output:
 

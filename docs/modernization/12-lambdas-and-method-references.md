@@ -27,7 +27,7 @@ an `int` can stand in for it. **That is the only rule**, and everything below fo
 
 `collections/FindDups.java:13-18` has this, written in 2014:
 
-    Comparator<String> comparator = new Comparator<String>() {
+    Comparator<String> comparator = new Comparator<>() {
         @Override
         public int compare(String s1, String s2) {
             return s1.compareToIgnoreCase(s2);
@@ -38,7 +38,7 @@ Six lines. `Comparator<String>` is a functional interface, so there are four way
 same thing, and **all four sort identically** — verified:
 
     // 1. anonymous class: what the repo has
-    Comparator<String> c = new Comparator<String>() { ... };
+    Comparator<String> c = new Comparator<>() { ... };
 
     // 2. lambda: the body was one expression, so it becomes one expression
     Comparator<String> c = (s1, s2) -> s1.compareToIgnoreCase(s2);

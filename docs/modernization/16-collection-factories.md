@@ -111,7 +111,7 @@ library actively randomises instead of being consistent by accident.
 
 `collections/ArgsRandom.java:12`:
 
-    List<String> lstArgs = new ArrayList<String>(Arrays.asList(args));
+    List<String> lstArgs = new ArrayList<>(Arrays.asList(args));
     Collections.shuffle(lstArgs);
 
 **A correction to the old version of this doc**, which said the second copy is "actually
@@ -141,7 +141,7 @@ Commits, in this order:
 **A correction to the old version:** it called `The100DoorsCyberDojoTest:46` "the second site" of
 the same `asList`-then-copy pattern. It isn't. Lines 45-51 are:
 
-    List<Door> lstDoors = new ArrayList<Door>(100);
+    List<Door> lstDoors = new ArrayList<>(100);
     for(int i=0; i<100; i++){
         lstDoors.add(i, new Door());
     }
