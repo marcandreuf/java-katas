@@ -44,7 +44,7 @@ public class SumWordsLengthCallableResultsSampleTest {
 	}
 
 	@Test
-	public void should_return_0_when_the_thread_is_interrupted(){
+	public void should_throw_when_the_thread_is_interrupted(){
 		assertThrows(InterruptedException.class, ()->{
 			Thread.currentThread().interrupt();
 			new SumWordsLength().calculate(inputWords);

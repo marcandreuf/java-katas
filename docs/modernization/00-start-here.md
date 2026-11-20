@@ -77,7 +77,7 @@ the real bugs are and you want the rest quiet by then.
 | 03 | Pattern matching | `Door`, `DecimalToBinary` |
 | 04 | Switch expressions, text blocks | `Direction.opposite` (experiments), `SimpleThreads` usage |
 | 05 | `var` and the diamond | eight pre-diamond sites across the repo |
-| 06 | Virtual threads | `SumWordsLength`, `OrdersProcessingSystem` (optional) |
+| 06 | Virtual threads | `SumWordsLength`, `OrdersProcessingSystem` |
 | 07 | Classic concurrency | `guardedLock/*`, `forkjoin/ForkBlur` |
 | 08 | The memory model | `BadThreads`, `MyDeadlock`, `Safelock` |
 | 09 | Streams and Optional | `FindDups`, `RandomFileLines`, `FairWorkLoad` |
