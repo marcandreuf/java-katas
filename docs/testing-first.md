@@ -127,7 +127,7 @@ non-deterministic, because the demo is the point. Read it before you try to pin 
 | `concurrency/BadThreads` | mod 08, 12 | concurrent — see above |
 | `concurrency/MyDeadlock` | mod 08, 11 | concurrent — and does **not** deadlock as written; see mod 08 |
 | `concurrency/Safelock` | mod 08, 19 | concurrent |
-| `concurrency/SimpleThreads` | mod 04, 06, 13, 21, 34 | concurrent — the timeout path needs a clock seam and a poll seam; see mod 13 |
+| `concurrency/SimpleThreads` | mod 04, 13, 21, 34 | concurrent — the timeout path needs a clock seam and a poll seam; see mod 13 |
 | `algorithm/L3_Synchronization_Udemy` | mod 12 | concurrent |
 | `concurrency/OrdersProcessingSystem` | mod 06, 12 | concurrent — `run()` is empty |
 | `concurrency/forkjoin/ForkBlur` | mod 07, 11, 13, 31, 34 | concurrent — blur maths is pure, extract it |

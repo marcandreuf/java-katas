@@ -3,9 +3,8 @@
 **Java 21** (preview in 19 and 20) · **JDK 24** changed what pins (JEP 491) · concept stage 06 of
 [the concept order](00-start-here.md) · no build change
 
-> **No safety net:** `OrdersProcessingSystem` has no tests, and `SimpleThreads` has only
-> `SimpleThreadsTest`, which covers `usage()` (doc 04) and none of the threading. Write them first,
-> in a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why
+> **No safety net:** `OrdersProcessingSystem` has no tests. Write them first, in a separate
+> commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why
 > the order matters.
 
 ## What this stage is actually about
@@ -107,37 +106,7 @@ to predict both columns before you run them is the deliverable.**
 [Doc 34](34-measuring-it-properly.md) says why a stopwatch around one run is weak evidence, and
 how to do better.
 
-## Part two: `SimpleThreads` on a virtual thread
-
-`concurrency/SimpleThreads.java:45` starts its worker as `new Thread(new MessageLoop())`. Change
-it to `Thread.ofVirtual().unstarted(new MessageLoop())` in a scratch copy and run it with `5`
-(give up after five seconds). Verified output:
-
-    main: Starting MessageLoop thread
-    main: Waiting for MessageLoop thread to finish
-    : Mares eat oats
-    main: Tired of waiting!
-    : I wasn't done!
-    main: Finally!
-
-Three things, in order of how likely they are to bite:
-
-- **The name is empty.** Virtual threads are unnamed by default, so the program's whole logging
-  scheme (`threadName + ": " + message`) now prints a leading colon. The fix is
-  `Thread.ofVirtual().name("MessageLoop")`. Check what your real logging framework prints for
-  a virtual thread before you switch a production service over.
-- **Interruption works exactly as before.** `t.interrupt()` wakes the sleeping virtual thread, and
-  the `catch (InterruptedException e)` runs.
-- **Virtual threads are always daemon threads.** `SimpleThreads` joins its worker, so it doesn't
-  matter here, but a `main` that starts a virtual thread and returns *exits*, killing the
-  thread mid-task. A platform thread would have kept the JVM alive. That is the opposite of the
-  `SumWordsLength` leak, and just as quiet.
-
-The test for this commit is the pure part: if you extracted `usage()` in
-[doc 04](04-switch-and-text-blocks.md), it still passes. The threading itself is covered by
-[`../testing-first.md`](../testing-first.md)'s concurrency rule: say so in the commit message.
-
-## Part three, optional: `OrdersProcessingSystem` from a blank page
+## Part two, optional: `OrdersProcessingSystem` from a blank page
 
 `concurrency/OrdersProcessingSystem.java` is a stub: a `ConcurrentLinkedQueue<Order>` that nothing
 adds to, an empty `start()`, and an inner `Runnable` with an empty `run()`. It isn't a
@@ -196,6 +165,33 @@ That's one after another, and JFR records ten events with
 [doc 23](23-foreign-function-and-memory.md)'s subject, and that's where to try it if you want to.
 The point to take from here is simpler: **pinning still exists, it moved, and the old advice to
 avoid `synchronized` is now wrong.**
+
+## Notes: `SimpleThreads` on a virtual thread
+
+Reading only: nothing here changes code in this repo. What happens if
+`concurrency/SimpleThreads.java:45`, which starts its worker as `new Thread(new MessageLoop())`,
+used `Thread.ofVirtual().unstarted(new MessageLoop())` instead, run with `5` (give up after five
+seconds). Verified output:
+
+    main: Starting MessageLoop thread
+    main: Waiting for MessageLoop thread to finish
+    : Mares eat oats
+    main: Tired of waiting!
+    : I wasn't done!
+    main: Finally!
+
+Three things, in order of how likely they are to bite:
+
+- **The name is empty.** Virtual threads are unnamed by default, so the program's whole logging
+  scheme (`threadName + ": " + message`) now prints a leading colon. The fix is
+  `Thread.ofVirtual().name("MessageLoop")`. Check what your real logging framework prints for
+  a virtual thread before you switch a production service over.
+- **Interruption works exactly as before.** `t.interrupt()` wakes the sleeping virtual thread, and
+  the `catch (InterruptedException e)` runs.
+- **Virtual threads are always daemon threads.** `SimpleThreads` joins its worker, so it doesn't
+  matter here, but a `main` that starts a virtual thread and returns *exits*, killing the
+  thread mid-task. A platform thread would have kept the JVM alive. That is the opposite of the
+  `SumWordsLength` leak, and just as quiet.
 
 ## Structured concurrency: not here
 
