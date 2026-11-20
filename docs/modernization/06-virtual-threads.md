@@ -8,33 +8,6 @@
 > in a separate commit, asserting what the code does today — bugs included. [`../testing-first.md`](../testing-first.md) says how, and why
 > the order matters.
 
-## Before you start: what this doc reuses from 03–05
-
-Answer each one in a line, without looking back. If you can't, reread the doc in brackets
-before you start. Every one of these comes up again below.
-
-1. **`var` (doc 05).** Part one's worked example is
-   `try (var executor = Executors.newVirtualThreadPerTaskExecutor())`. What static type does
-   `executor` get, and is it the type you would have written? Does it pass your own rule from
-   doc 05 ("only when the type is obvious in the same line")? Then check that rule against
-   `for (var str : lstArgs)` in `ArgsRandom.java:14`, which you wrote. Either the rule or the line
-   has to change.
-2. **The diamond (doc 05).** Part one rewrites `SumWordsLength`, and line 28 still says
-   `new HashSet<Future<Integer>>()`. It was in the diamond table and it's still there. Why must it
-   go in its own commit, **before** part one's, with the `javac` + `diff -r` evidence, and not
-   inside the virtual-thread commit?
-3. **Which changes count as proved (doc 05 part one, [`../testing-first.md`](../testing-first.md)).**
-   Part three says the threading is "covered by the concurrency rule". Say in one sentence how
-   that differs from doc 05's diamond exception. One of them proves the change; the other only
-   writes down that it is untested.
-4. **What `default` does (doc 04 part one).** `Direction.opposite1996()` uses `default` to stand in
-   for `LEFT`. Add a fifth constant to `Direction`: which of the two `opposite` methods stops
-   compiling, and what does the other one return? Part one's `catch (Exception e)` that returns 0
-   is the same mistake in a different form, a branch that hides the case it should report. Say why.
-5. **The text-block margin (doc 04 part two).** Part three relies on `SimpleThreadsTest` still
-   passing. Without running it, what does `usage()` return if you move the closing `"""` onto its
-   own line, one tab to the left of the text?
-
 ## What this stage is actually about
 
 Five words, defined once:
@@ -134,51 +107,7 @@ to predict both columns before you run them is the deliverable.**
 [Doc 34](34-measuring-it-properly.md) says why a stopwatch around one run is weak evidence, and
 how to do better.
 
-## Part two: pinning, and what changed in JDK 24
-
-Every tutorial written before 2025 says that blocking inside `synchronized` **pins** the virtual
-thread, so the carrier is stuck. **That was true through JDK 23 and isn't true on the JDK this repo
-uses.** JEP 491 (JDK 24) let virtual threads unmount while holding a monitor. Here's the
-experiment, run with the JVM limited to **one** carrier
-(`-Djdk.virtualThreadScheduler.parallelism=1`), thirty tasks, each sleeping 100 ms inside
-`synchronized` (verified):
-
-| Lock | Time | What it means |
-| --- | --- | --- |
-| each task locks its own `new Object()` | **112 ms** | not pinned: all thirty unmounted while asleep |
-| all tasks lock one shared object | **3016 ms** | **not pinning either**: they queue for the lock, one at a time |
-
-The second row is the trap. It looks like pinning, and it's just a lock doing its job: only one
-thread may hold it. On JDK 21 *both* rows should take about 3000 ms with one carrier, and the
-first row is the pinning one. (That's from JEP 491's description of the old behaviour, not a run:
-only JDK 25 and 26 are installed here. If you have a JDK 21, run it and correct this line if it's
-wrong.) **Telling those two apart is what the follow-up
-question is really testing.**
-
-Two more things that changed, both verified:
-
-- `-Djdk.tracePinnedThreads=full`, which most articles tell you to use, is **silently ignored** on
-  JDK 26. No output, no warning.
-- The way to see pinning now is Flight Recorder:
-
-      java -XX:StartFlightRecording=filename=pin.jfr,settings=profile ...
-      jfr print --events jdk.VirtualThreadPinned pin.jfr
-
-  For the experiment above it records **zero** `jdk.VirtualThreadPinned` events, for either row.
-
-**What still pins on JDK 26** is a virtual thread blocking while a **native frame** is on its
-stack: Java code called back *from* C. To see it, call C's `qsort` through the foreign function
-API with a Java comparator that sleeps (verified, one carrier, ten tasks):
-
-    10 virtual threads, each sleeping 100 ms inside a qsort callback: 1043 ms
-
-That's one after another, and JFR records ten events with
-`pinnedReason = "Native or VM frame on stack"`. The foreign-function API is
-[doc 23](23-foreign-function-and-memory.md)'s subject. Do this experiment after that one if you do
-it at all. The point to take from here is simpler: **pinning still exists, it moved, and the
-old advice to avoid `synchronized` is now wrong.**
-
-## Part three: `SimpleThreads` on a virtual thread
+## Part two: `SimpleThreads` on a virtual thread
 
 `concurrency/SimpleThreads.java:45` starts its worker as `new Thread(new MessageLoop())`. Change
 it to `Thread.ofVirtual().unstarted(new MessageLoop())` in a scratch copy and run it with `5`
@@ -208,7 +137,7 @@ The test for this commit is the pure part: if you extracted `usage()` in
 [doc 04](04-switch-and-text-blocks.md), it still passes. The threading itself is covered by
 [`../testing-first.md`](../testing-first.md)'s concurrency rule: say so in the commit message.
 
-## Part four, optional: `OrdersProcessingSystem` from a blank page
+## Part three, optional: `OrdersProcessingSystem` from a blank page
 
 `concurrency/OrdersProcessingSystem.java` is a stub: a `ConcurrentLinkedQueue<Order>` that nothing
 adds to, an empty `start()`, and an inner `Runnable` with an empty `run()`. It isn't a
@@ -223,6 +152,50 @@ conversion. It's a blank page. If you want to build it:
   `null` when it's empty, so the consumers would spin. That burns the carriers this stage just
   taught you to keep free. A `LinkedBlockingQueue`'s `take()` blocks, so the virtual thread
   unmounts. Write down why you changed it, in the commit that changes it.
+
+## Notes: pinning, and what changed in JDK 24
+
+Reading only: nothing here changes code in this repo. The numbers are from runs already done
+(verified), so you don't need to reproduce them.
+
+Every tutorial written before 2025 says that blocking inside `synchronized` **pins** the virtual
+thread, so the carrier is stuck. **That was true through JDK 23 and isn't true on the JDK this repo
+uses.** JEP 491 (JDK 24) let virtual threads unmount while holding a monitor. The experiment: the
+JVM limited to **one** carrier (`-Djdk.virtualThreadScheduler.parallelism=1`), thirty tasks, each
+sleeping 100 ms inside `synchronized`:
+
+| Lock | Time | What it means |
+| --- | --- | --- |
+| each task locks its own `new Object()` | **112 ms** | not pinned: all thirty unmounted while asleep |
+| all tasks lock one shared object | **3016 ms** | **not pinning either**: they queue for the lock, one at a time |
+
+The second row is the trap. It looks like pinning, and it's just a lock doing its job: only one
+thread may hold it. On JDK 21 *both* rows would take about 3000 ms with one carrier, and the
+first row is the pinning one. (That's from JEP 491's description of the old behaviour, not a run:
+only JDK 25 and 26 are installed here.) **Telling those two apart is the point of this note.**
+
+Two more things that changed:
+
+- `-Djdk.tracePinnedThreads=full`, which most articles tell you to use, is **silently ignored** on
+  JDK 26. No output, no warning.
+- The way to see pinning now is Flight Recorder:
+
+      java -XX:StartFlightRecording=filename=pin.jfr,settings=profile ...
+      jfr print --events jdk.VirtualThreadPinned pin.jfr
+
+  For the experiment above it records **zero** `jdk.VirtualThreadPinned` events, for either row.
+
+**What still pins on JDK 26** is a virtual thread blocking while a **native frame** is on its
+stack: Java code called back *from* C. Calling C's `qsort` through the foreign function API with a
+Java comparator that sleeps (one carrier, ten tasks):
+
+    10 virtual threads, each sleeping 100 ms inside a qsort callback: 1043 ms
+
+That's one after another, and JFR records ten events with
+`pinnedReason = "Native or VM frame on stack"`. The foreign-function API is
+[doc 23](23-foreign-function-and-memory.md)'s subject, and that's where to try it if you want to.
+The point to take from here is simpler: **pinning still exists, it moved, and the old advice to
+avoid `synchronized` is now wrong.**
 
 ## Structured concurrency: not here
 

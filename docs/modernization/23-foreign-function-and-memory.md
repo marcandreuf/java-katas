@@ -166,7 +166,7 @@ The API also goes the other way: an **upcall stub** is a C function pointer that
 method. C's `qsort` takes a comparator pointer, and an upcall stub to a Java comparator sorts
 `[5, 3, 9, 1, 7]` into `[1, 3, 5, 7, 9]` (verified). [Doc 06](06-virtual-threads.md) uses exactly
 this to show what still pins a virtual thread on JDK 26: a Java callback blocking while a C frame
-is on the stack. Do that experiment now, if you skipped it there.
+is on the stack. Doc 06 only describes it; this is the place to run it, if you want to.
 
 ## What got worse
 
