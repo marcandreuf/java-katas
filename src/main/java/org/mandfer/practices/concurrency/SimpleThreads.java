@@ -3,13 +3,14 @@ package org.mandfer.practices.concurrency;
 public class SimpleThreads {
 
 	static void printMsgWithCurrentThreadsName(String message) {
-		String threadName = Thread.currentThread().getName();
+		//String threadName = Thread.currentThread().getName();
+		String threadName = Thread.ofVirtual().name("MessageLoop").toString();
 		System.out.println(threadName+": "+message);
 	}
 
 	private static class MessageLoop implements Runnable {
 		public void run() {
-			String importantInfo[] = { "Mares eat oats", "Does eat oats",
+			String[] importantInfo = { "Mares eat oats", "Does eat oats",
 					"Little lambs eat ivy", "A kid will eat ivy too" };
 			try {
 				for (String msg : importantInfo) {
@@ -28,7 +29,7 @@ public class SimpleThreads {
 				an integer.""";
 	}
 
-	public static void main(String args[]) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException {
 		long defaultDelayInMiliseconds = 1000 * 60 * 60;
 
 		if (args.length > 0) {
@@ -42,7 +43,8 @@ public class SimpleThreads {
 
 		printMsgWithCurrentThreadsName("Starting MessageLoop thread");
 		long startTime = System.currentTimeMillis();
-		Thread t = new Thread(new MessageLoop());
+		//Thread t = new Thread(new MessageLoop());
+		Thread t = Thread.ofVirtual().unstarted(new MessageLoop());
 		t.start();
 
 		printMsgWithCurrentThreadsName("Waiting for MessageLoop thread to finish");
