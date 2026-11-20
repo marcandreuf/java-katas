@@ -6,16 +6,19 @@
 ## What you do in this doc
 
 Read the **Theory** sections first. They change no code. Then do the **Practice** exercises, in
-order. Each one ends with a **Done when** line. Exercise 1 is done; start at exercise 2.
+order. Each one ends with a **Done when** line. Exercise 1 is done apart from two loose ends;
+start at exercise 2.
 
-| Exercise | What you do | Tests |
-| --- | --- | --- |
-| [1. `SumWordsLength`](#exercise-1-modernise-sumwordslength) | **Done** (`6ef7a4c`). Fix two bugs, then move it to virtual threads. | Tighten the existing test first. |
-| [2. `OrdersProcessingSystem`](#exercise-2-build-ordersprocessingsystem-a-producerconsumer) | Build a producer/consumer on virtual threads from a stub. Five commits. | Write them first: producer, consumer, then the whole system. |
-| [3. What got worse](#exercise-3-fill-in-what-got-worse) | Write down two costs of what you just did. | None. |
+| Exercise | What you do | Theory it uses | Tests |
+| --- | --- | --- | --- |
+| [1. `SumWordsLength`](#exercise-1-modernise-sumwordslength) | **Done** (`6ef7a4c`), two optional loose ends. Fix two bugs, then move it to virtual threads. | T1, T2, T6 | Tighten the existing test first. |
+| [2. `SimpleThreads` naming](#exercise-2-name-the-simplethreads-worker) | Fix the thread name that `a17baf4` broke. One commit. | T4, T5 | `SimpleThreadsTest` stays green; the naming is checked by running it. |
+| [3. `OrdersProcessingSystem`](#exercise-3-build-ordersprocessingsystem-a-producerconsumer) | Build a producer/consumer on virtual threads from a stub. Five commits. | T1, T4, T5, T6 | Write them first: producer, consumer, then the whole system. |
+| [4. What got worse](#exercise-4-fill-in-what-got-worse) | Write down two costs of what you just did. | all | None. |
+| [5. Review questions](#exercise-5-review-questions) | Answer without looking, then check against the theory. | all | None. |
 
 > **Safety net:** exercise 1 started by tightening `SumWordsLength`'s existing test, because the
-> code worked and the test had to pin it down before the change. Exercise 2 is new code,
+> code worked and the test had to pin it down before the change. Exercise 3 is new code,
 > so there's nothing to pin down: you write each test before the code that passes it.
 > [`../testing-first.md`](../testing-first.md) has the rules for concurrent code.
 
@@ -117,10 +120,9 @@ avoid `synchronized` is now wrong.**
 
 ### T4. `SimpleThreads` on a virtual thread
 
-What happens if
-`concurrency/SimpleThreads.java:45`, which starts its worker as `new Thread(new MessageLoop())`,
-used `Thread.ofVirtual().unstarted(new MessageLoop())` instead, run with `5` (give up after five
-seconds). Verified output:
+What happens if `concurrency/SimpleThreads.java`, which started its worker as
+`new Thread(new MessageLoop())`, used `Thread.ofVirtual().unstarted(new MessageLoop())` instead,
+run with `5` (give up after five seconds). Verified output:
 
     main: Starting MessageLoop thread
     main: Waiting for MessageLoop thread to finish
@@ -132,18 +134,78 @@ seconds). Verified output:
 Three things, in order of how likely they are to bite:
 
 - **The name is empty.** Virtual threads are unnamed by default, so the program's whole logging
-  scheme (`threadName + ": " + message`) now prints a leading colon. The fix is
-  `Thread.ofVirtual().name("MessageLoop")`. Check what your real logging framework prints for
-  a virtual thread before you switch a production service over.
+  scheme (`threadName + ": " + message`) now prints a leading colon. The fix is to give the
+  thread a name where it is created (T5, and exercise 2). Check what your real logging
+  framework prints for a virtual thread before you switch a production service over.
 - **Interruption works exactly as before.** `t.interrupt()` wakes the sleeping virtual thread, and
   the `catch (InterruptedException e)` runs.
 - **Virtual threads are always daemon threads.** `SimpleThreads` joins its worker, so it doesn't
   matter here, but a `main` that starts a virtual thread and returns *exits*, killing the
   thread mid-task. A platform thread would have kept the JVM alive. That is the opposite of the
-  `SumWordsLength` leak fixed in exercise 1, and just as quiet. Exercise 2 runs into it
+  `SumWordsLength` leak fixed in exercise 1, and just as quiet. Exercise 3 runs into it
   directly.
 
-### T5. Structured concurrency: not here
+### T5. Making and naming a thread: the builder
+
+`Thread.ofVirtual()` and `Thread.ofPlatform()` don't give you a thread. They give you a
+**builder**: an object whose job is to make threads. You set it up, then ask it for threads.
+
+| Call | Returns | What it is |
+| --- | --- | --- |
+| `Thread.ofVirtual()` | `Thread.Builder.OfVirtual` | a builder for virtual threads |
+| `.name("MessageLoop")` | the same builder | the builder, set so the threads it makes get that name |
+| `.name("worker-", 0)` | the same builder | numbered names: `worker-0`, `worker-1`, ... one per thread made |
+| `.unstarted(runnable)` | `Thread` | a thread, not started yet: call `start()` on it |
+| `.start(runnable)` | `Thread` | a thread, already started |
+| `.factory()` | `ThreadFactory` | for executors: `Executors.newThreadPerTaskExecutor(factory)` gives named virtual threads |
+
+So `.name(...)` is a setting, not a value. It returns the builder so you can keep chaining.
+
+**The name lives on a thread, not on the builder.** It exists only once the builder has made a
+thread. You read it from *inside* that thread with `Thread.currentThread().getName()`, which asks
+"who is running me?". It gives `main` when the main thread runs it, and the worker's name when
+the worker runs it. That splits the job across two places:
+
+- **Where a thread is created** is where you choose its name.
+- **Where you print or log** is where you read the name of whoever is running.
+
+**The mistake to recognise** (from `a17baf4`, verified 2026-11-20). Calling `.toString()` on a
+builder doesn't give a name. It gives Java's default text for any object, the class name plus a
+hash:
+
+    java.lang.ThreadBuilders$VirtualThreadBuilder@7344699f: Starting MessageLoop thread
+    java.lang.ThreadBuilders$VirtualThreadBuilder@3d4eac69: Waiting for MessageLoop thread to finish
+
+Each line has a different hash because each call made a new throwaway builder. No thread was ever
+made from any of them, and `main`'s lines are mislabelled too.
+
+### T6. The interrupt flag: propagate it or restore it
+
+`t.interrupt()` doesn't stop a thread. It sets a **flag** on it, a polite request to stop. What
+reads the flag:
+
+- **Blocking calls** (`sleep`, `join`, `BlockingQueue.take`, `Future.get`) throw
+  `InterruptedException` when the flag is set, and **clear the flag** as they throw. From then on,
+  the exception is the only record that someone asked the thread to stop.
+- `Thread.currentThread().isInterrupted()` reads the flag and leaves it alone.
+- `Thread.interrupted()` (static) reads the flag **and clears it**. That's why exercise 1 uses it
+  at the end of a test: to stop the flag leaking into the next test.
+
+So whoever catches `InterruptedException` is holding the cancellation. There are two right moves
+and one wrong one:
+
+| What you do | Flag afterwards | Right? |
+| --- | --- | --- |
+| **Propagate**: declare `throws InterruptedException` and let it go | cleared, but the exception carries the request up | yes |
+| **Restore**: catch it, call `Thread.currentThread().interrupt()`, then return or throw something else | set again | yes |
+| **Swallow**: catch it and carry on, or return a default | cleared, and nobody knows | no: a cancelled program keeps running |
+
+`SumWordsLength.calculate` propagates, so after the interrupt test the flag is **cleared**
+(verified 2026-11-20). That's correct, not a leak. `Runnable.run()` can't throw a checked
+exception, so a `Runnable` that blocks (the consumer in exercise 3) has to catch it: restore the
+flag, then return.
+
+### T7. Structured concurrency: not here
 
 Structured concurrency is **still a preview API**, and its shape changed after JDK 21: the
 `ShutdownOnFailure` subclass in most tutorials isn't how JDK 25 or 26 spell it. It's taught, with
@@ -163,8 +225,13 @@ preview flag.
 > - Steps 3 and 4, close the executor and swap it: done. `newVirtualThreadPerTaskExecutor()` in
 >   try-with-resources. A `main` calling `calculate` exits on its own (checked by hand).
 >
-> Loose ends: nothing tests a task failing (`ExecutionException`), and the scratch timing run
-> below can't be checked from the repo.
+> **Still to do (optional):**
+>
+> - **A test for a failing task.** Nothing tests the `ExecutionException` path. `calculate`
+>   creates its own `WordLengthCallable`s, so a test can't make one fail without a seam. Decide
+>   whether the seam is worth adding for this kata, and write down why either way.
+> - **The scratch timing run** at the end of this exercise, if you haven't done it: predict both
+>   columns of T2's table, then run them.
 >
 > The steps below are kept as the record of what was changed and why.
 
@@ -196,10 +263,10 @@ message and pass.
    `calcWordLength`. Clear the interrupt flag at the end of your test (`Thread.interrupted()`) so
    it doesn't leak into the next one.
 2. **Fix the swallowed exception.** Decide what `calculate` should do when a task fails or the
-   thread is interrupted, and write it down: throw, probably. Restore the interrupt flag
-   (`Thread.currentThread().interrupt()`) before throwing on `InterruptedException`, because
-   swallowing it is how a cancelled program keeps running. The interrupt test's assertion changes
-   in this commit, because this is the behaviour fix.
+   thread is interrupted, and write it down: throw, probably. Either let `InterruptedException`
+   propagate, or catch it, restore the flag (`Thread.currentThread().interrupt()`) and throw
+   something else (T6). Swallowing it is how a cancelled program keeps running. The interrupt
+   test's assertion changes in this commit, because this is the behaviour fix.
 3. **Fix the leak** with try-with-resources around the existing fixed pool. One line moves; the
    tests stay green. Check by hand that a `main` calling `calculate` now exits.
 4. **Swap the executor.** `Executors.newFixedThreadPool(3)` becomes
@@ -217,7 +284,26 @@ how to do better.
 **Done when:** the four commits are in, a `main` calling `calculate` exits on its own, and you
 predicted both columns of T2's table before running them.
 
-### Exercise 2: build `OrdersProcessingSystem`, a producer/consumer
+### Exercise 2: name the `SimpleThreads` worker
+
+**Status (checked 2026-11-20):** `a17baf4` switched the worker to a virtual thread, which is the
+right move, but broke the names. `printMsgWithCurrentThreadsName` now prints
+`Thread.ofVirtual().name("MessageLoop").toString()` instead of the current thread's name, so every
+line starts with `java.lang.ThreadBuilders$VirtualThreadBuilder@...` (T5 shows the output).
+
+**What to do.** Read T5 first. Then put each half of the job in its place: the name is chosen
+where the worker thread is created, and the print method reads the name of whoever is running it.
+Only the worker gets a name; the main thread is already called `main`.
+
+**Tests.** `SimpleThreadsTest` covers `usage()`, not the threading, and it must stay green. The
+naming is checked by running the program, so say that in the commit message
+([`../testing-first.md`](../testing-first.md)'s concurrency rule).
+
+**Done when:** `SimpleThreads 2` prints `main: ...` on the main thread's lines and
+`MessageLoop: ...` on the worker's lines (compare T4's output, which has no name at all), and
+`SimpleThreadsTest` passes.
+
+### Exercise 3: build `OrdersProcessingSystem`, a producer/consumer
 
 `concurrency/OrdersProcessingSystem.java` is a stub: a `ConcurrentLinkedQueue<Order>` that nothing
 adds to, an empty `start()`, and an inner `OrdersGeneratorSimulator` whose `run()` is empty. There
@@ -274,8 +360,9 @@ deterministic.
    never returns, and you want a red test, not a frozen build.
 3. **Consumer interrupt test (one thread).** Start the consumer on a virtual thread with an
    **empty** queue, so it waits in `take()`. Interrupt it, `join` it with a timeout, and assert it
-   has finished. Decide what an interrupted consumer should do (stop, and keep the interrupt
-   flag set: the same rule as exercise 1, step 2) and write it down in the test name.
+   has finished. Decide what an interrupted consumer should do (stop, and restore the interrupt
+   flag, because `run()` can't propagate it: T6) and write it down in the test name. Name the
+   consumer threads too (T5), so a failing run tells you which consumer did what.
 4. **System test (real virtual threads).** N = 1000 orders, K = 10 consumers, and a `process` that
    counts into a `ConcurrentHashMap<Order, Integer>` with `merge(order, 1, Integer::sum)`. After
    `start()` returns, assert there are N keys and **every count is exactly 1**: none lost, none
@@ -305,9 +392,9 @@ time them. If you're far off, T1's rule says why.
 **Done when:** all four test levels are green, `main` exits on its own, and your three predictions
 were within a factor of two.
 
-### Exercise 3: fill in "What got worse"
+### Exercise 4: fill in "What got worse"
 
-Do this last, once exercise 2 is in. Write at least two things that virtual threads made
+Do this once exercise 3 is in. Write at least two things that virtual threads made
 worse or riskier, in your own words.
 
 - _(fill this in)_
@@ -316,7 +403,37 @@ worse or riskier, in your own words.
 Prompts: what does an unbounded number of concurrent calls do to the service on the other end?
 Where does backpressure live once the pool is not providing it by accident? (The pool of 3 was
 also a limit of three simultaneous calls; `newVirtualThreadPerTaskExecutor` has no limit at all.)
-Your `LinkedBlockingQueue` in exercise 2: is it bounded, and what happens to memory if the
-producer is faster than the consumers? What happens to a `ThreadLocal` when there are a million threads? And when the advice you learned
+Your `LinkedBlockingQueue` in exercise 3: is it bounded, and what happens to memory if the
+producer is faster than the consumers? What happens to a `ThreadLocal` when there are a million
+threads? And when the advice you learned
 ("avoid `synchronized` with virtual threads") stops being true two releases later, how would you
 have found out?
+
+### Exercise 5: review questions
+
+Answer each one in a line or two, without looking. Then check against the section in brackets.
+Any you got wrong, reread that section.
+
+1. Thirty tasks, each `Thread.sleep(100)`, on 10 cores. How long with `newFixedThreadPool(5)`, and
+   how long with `newVirtualThreadPerTaskExecutor()`? (T1, T2)
+2. Same thirty tasks, but each one spins the CPU for 100 ms. How long with virtual threads, and
+   why didn't they help? (T1, T2)
+3. On JDK 26, one carrier, ten virtual threads each sleep 100 ms inside `synchronized` on **one
+   shared** object. It takes about 1000 ms. Is that pinning? How would you prove it either way?
+   (T3)
+4. Name one thing that still pins a virtual thread on JDK 26. (T3)
+5. What does `Thread.ofVirtual().name("x")` return, and where does the name `"x"` first become
+   visible? (T5)
+6. You want every virtual thread an executor creates to be named `worker-0`, `worker-1`, ... Which
+   two builder calls and which executor factory do you use? (T5)
+7. `Future.get()` throws `InterruptedException`. What state is the interrupt flag in now, and what
+   are your two correct options? (T6)
+8. What's the difference between `Thread.interrupted()` and `isInterrupted()`, and which one do
+   you call at the end of a test, and why? (T6)
+9. A `main` starts a virtual thread and returns straight away. What happens to the thread? What
+   does `start()` in exercise 3 have to do about it? (T4)
+10. Why does a virtual-thread consumer use `LinkedBlockingQueue.take()` and not
+    `ConcurrentLinkedQueue.poll()`? (T1, exercise 3)
+11. Why is the poison pill compared with `==` and not `equals`? (exercise 3, decision 2)
+
+**Done when:** you can answer all eleven without looking.
