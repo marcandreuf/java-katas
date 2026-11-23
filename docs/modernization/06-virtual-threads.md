@@ -24,136 +24,336 @@ start at exercise 2.
 
 ## Theory
 
-### T1. Five words and one rule
+Read the seven sections in order: each one builds on the one before. Here is the whole story in
+one paragraph, so you know where it's going.
 
-Five words, defined once:
+> Threads used to be expensive, so we shared a few of them through pools, and the size of the
+> pool quietly capped how many tasks could be *waiting* at once. A virtual thread is cheap enough
+> to create one per task, because while it waits it steps off the real operating-system thread
+> and lets another task use it (T1). That makes waiting work fast and leaves computing work
+> exactly as fast as it was (T2). The one thing that spoils it, a virtual thread that *can't* step
+> off, is called pinning, and JDK 24 moved where it happens (T3). Switching a real program over
+> changes two things you'll notice straight away: thread names and daemon status (T4). Naming a
+> thread properly means understanding the builder (T5). And stopping a thread, virtual or not,
+> means handling the interrupt flag correctly (T6). Structured concurrency comes later (T7).
 
-- a **platform thread** is what `new Thread(...)` has always given you: one Java thread backed by
-  one operating-system thread. They are expensive: about a megabyte of stack each, and the OS
-  schedules them.
-- a **virtual thread** is a Java thread that the JVM schedules, not the OS. It is cheap enough that
-  you create one per task and throw it away: `Thread.ofVirtual().start(...)`, or
-  `Executors.newVirtualThreadPerTaskExecutor()`.
-- a **carrier thread** is the platform thread a virtual thread is actually running on at a given
-  moment. The JVM keeps a small pool of them, one per CPU core by default.
-- **mounting** and **unmounting**: when a virtual thread blocks (on `sleep`, I/O, a lock, a queue),
-  the JVM takes it off its carrier and puts another virtual thread there instead. When the
-  blocking call returns, it gets mounted again, possibly on a different carrier.
-- **pinning** is when a virtual thread blocks but *can't* be unmounted, so its carrier is stuck
-  waiting with it.
+Every code sample below is a complete program unless it says otherwise. Save it as the class name
+plus `.java` and run it with `java Name.java`; no build needed. Outputs marked *verified* were
+run on JDK 26.
 
-That gives one rule, and everything below follows from it: **a virtual thread is cheap only while
-it is blocked.** While it waits, it gives its carrier to someone else, so ten thousand waiting
-tasks cost almost nothing. While it computes, it holds a carrier like any other thread, and
-there are only as many carriers as cores. Blocking work scales; CPU work doesn't; pinning is what
-happens when blocking work starts behaving like CPU work.
+### T1. What a virtual thread is, and the one rule
 
-### T2. The worked example
+**The problem it solves.** Before Java 21, `new Thread(...)` always gave you a **platform thread**:
+one Java thread backed by one operating-system thread. Those are expensive: about a megabyte of
+stack each, and the OS schedules them. You can't have a hundred thousand of them, so we share a
+few through a pool:
 
-Thirty tasks, each taking 100 ms, on a 10-core machine (verified, `nproc` = 10):
+```java
+ExecutorService pool = Executors.newFixedThreadPool(3);   // three threads, shared by every task
+```
+
+A pool is fine when tasks compute. But most real tasks spend their time *waiting*: for a database,
+an HTTP response, a file. A pool thread that's waiting does nothing, and it can't be lent to
+anyone else while it waits. So the number 3, chosen to save memory, also became the number of
+things the program can wait for at the same time.
+
+**The idea.** A **virtual thread** is a Java thread that the JVM schedules, not the OS. It runs on
+top of a small pool of platform threads called **carrier threads**, one per CPU core by default.
+When a virtual thread blocks (on `sleep`, I/O, a lock, a queue), the JVM takes it off its carrier
+and parks it on the heap: that's **unmounting**. The carrier is now free to run another virtual
+thread. When the blocking call returns, the virtual thread is **mounted** again, possibly on a
+different carrier.
+
+```text
+10 carriers (one per core)        virtual threads
+─────────────────────────         ───────────────────────────────────────────────
+carrier-1  ── runs ──>  vt-7      (computing: holds its carrier)
+carrier-2  ── runs ──>  vt-3      (computing: holds its carrier)
+carrier-3  ── idle                 vt-1, vt-2, vt-4 ... vt-9999
+...                               (all asleep: parked on the heap, no carrier at all)
+```
+
+From your code's side, it's the same `Thread` class with the same methods (`sleep`, `join`,
+`interrupt`). Only the way you create it changes:
+
+```java
+Thread platform = new Thread(task);                  // platform thread, as always
+Thread virtual  = Thread.ofVirtual().start(task);    // virtual thread, already started
+
+ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+                                                     // a new virtual thread for every task you submit
+```
+
+Because they're cheap, you don't pool virtual threads. You create one per task and throw it away.
+This program starts ten thousand of them, each sleeping one second:
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+public class Cheap {
+    public static void main(String[] args) throws InterruptedException {
+        long start = System.nanoTime();
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < 10_000; i++) {
+            threads.add(Thread.ofVirtual().start(() -> {
+                try { Thread.sleep(1_000); } catch (InterruptedException e) { }
+            }));
+        }
+        for (Thread t : threads) t.join();
+        System.out.printf("10000 virtual threads, each asleep 1 s: %d ms%n",
+                (System.nanoTime() - start) / 1_000_000);
+    }
+}
+```
+
+```text
+10000 virtual threads, each asleep 1 s: 1050 ms          (verified 2026-11-23; varies by run)
+```
+
+Ten thousand one-second waits took one second, because all of them waited at once and none of
+them held a carrier while waiting. (The empty `catch` is acceptable only in a throwaway demo; T6
+says why.)
+
+**The one rule.** Everything else in this doc follows from it:
+
+> **A virtual thread is cheap only while it is blocked.**
+
+While it waits, it gives its carrier to someone else, so ten thousand waiting tasks cost almost
+nothing. While it computes, it holds a carrier like any other thread, and there are only as many
+carriers as cores. Blocking work scales; CPU work doesn't.
+
+There is one more word you need. **Pinning** is when a virtual thread blocks but *can't* be
+unmounted, so its carrier is stuck waiting with it. Pinning is what happens when blocking work
+starts behaving like CPU work. T3 covers it.
+
+| Word | Meaning in one line |
+| --- | --- |
+| platform thread | a Java thread on its own OS thread; what `new Thread(...)` gives you |
+| virtual thread | a Java thread the JVM schedules; cheap, one per task |
+| carrier thread | the platform thread a virtual thread is running on right now |
+| mount / unmount | putting a virtual thread on a carrier / taking it off when it blocks |
+| pinning | a blocked virtual thread that can't unmount, so its carrier waits too |
+
+### T2. The rule in numbers
+
+Here is one experiment that shows the rule at work. Take thirty tasks, each lasting 100 ms, and run
+them two ways. In the first column, the task *waits*:
+
+```java
+Runnable blocks = () -> {
+    try { Thread.sleep(100); } catch (InterruptedException e) { throw new RuntimeException(e); }
+};
+```
+
+In the second, it *works*: it keeps a core busy for the same 100 ms.
+
+```java
+Runnable computes = () -> {
+    long end = System.nanoTime() + 100_000_000;   // 100 ms from now
+    while (System.nanoTime() < end) { }           // spin: keep the CPU busy
+};
+```
+
+Each task set runs once on a fixed pool of 3 and once on virtual threads, on a 10-core machine
+(verified, `nproc` = 10). **Before you look at the table, use T1's rule to guess the four
+numbers.**
 
 | Executor | Task blocks (`Thread.sleep(100)`) | Task computes (spins for 100 ms) |
 | --- | --- | --- |
 | `newFixedThreadPool(3)` | **1005 ms** | **1003 ms** |
 | `newVirtualThreadPerTaskExecutor()` | **109 ms** | **309 ms** |
 
-Read the table by the rule:
+Read it by the rule:
 
-- **Pool of 3, either column:** three at a time, ten rounds: `tasks / 3 * 100 ms` = 1000 ms. The
-  pool doesn't care whether the task waits or works.
-- **Virtual, blocking:** all thirty sleep at once, each one off its carrier, so the total is about
-  one task's time: ~100 ms.
-- **Virtual, computing:** each task holds a carrier for its whole 100 ms. Ten carriers, thirty
+- **Pool of 3, either column.** Three tasks at a time, ten rounds: `30 / 3 × 100 ms` = 1000 ms.
+  The pool doesn't care whether its threads wait or work: a waiting pool thread is still taken.
+- **Virtual, blocking.** All thirty go to sleep at once, each one off its carrier, so the total is
+  about one task's time: ~100 ms.
+- **Virtual, computing.** Each task holds a carrier for its whole 100 ms. Ten carriers, thirty
   tasks, three rounds: 300 ms. That's exactly what a fixed pool of 10 would give you. **Virtual
-  threads made no difference to CPU-bound work**; they only stopped the pool of 3 from being too
-  small.
+  threads made no difference to CPU-bound work.** All they did was remove the pool of 3, which was
+  too small.
 
-The code change itself is one line, plus the try-with-resources that `ExecutorService` has
-supported since Java 19 (`close()` waits for submitted tasks, then shuts down):
+The code change in a real program is one line, plus try-with-resources. `ExecutorService` has been
+`AutoCloseable` since Java 19: `close()` waits for every submitted task, then shuts down.
 
-    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-        // submit tasks; close() at the end of the block waits for them
+```java
+// before: three shared threads, and nothing ever shuts them down
+ExecutorService executor = Executors.newFixedThreadPool(3);
+
+// after: one virtual thread per task, and close() at the end of the block waits for them
+try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    for (String word : words) {
+        futures.add(executor.submit(() -> slowLookup(word)));
     }
+}
+```
+
+(A fragment, not a full program. Exercise 1's scratch run asks you to write the timing program
+yourself, so the predicting is yours.)
 
 ### T3. Pinning, and what changed in JDK 24
 
-The numbers are from runs already done (verified), so you don't need to reproduce them.
+T1 says a blocked virtual thread unmounts. Pinning is the exception: the thread blocks, but the JVM
+can't take it off its carrier, so the carrier waits too. If every carrier gets pinned, nothing
+else runs.
 
-Every tutorial written before 2025 says that blocking inside `synchronized` **pins** the virtual
-thread, so the carrier is stuck. **That was true through JDK 23 and isn't true on the JDK this repo
-uses.** JEP 491 (JDK 24) let virtual threads unmount while holding a monitor. The experiment: the
-JVM limited to **one** carrier (`-Djdk.virtualThreadScheduler.parallelism=1`), thirty tasks, each
-sleeping 100 ms inside `synchronized`:
+**The old story.** Every tutorial written before 2025 says that blocking inside `synchronized`
+pins the virtual thread. **That was true through JDK 23, and it isn't true on the JDK this repo
+uses.** JEP 491 (JDK 24) let virtual threads unmount while holding a monitor.
+
+**The experiment that shows it.** Limit the JVM to **one** carrier, so any pinning is impossible
+to miss, and run thirty tasks that each sleep 100 ms inside `synchronized`. Once with a lock per
+task, once with one lock shared by all of them:
+
+```java
+import java.util.concurrent.Executors;
+
+public class Locks {
+    static final Object SHARED = new Object();
+
+    static long run(boolean shared) {
+        long start = System.nanoTime();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            for (int i = 0; i < 30; i++) {
+                executor.submit(() -> {
+                    Object lock = shared ? SHARED : new Object();
+                    synchronized (lock) {
+                        try { Thread.sleep(100); } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+            }
+        }
+        return (System.nanoTime() - start) / 1_000_000;
+    }
+
+    public static void main(String[] args) {
+        System.out.println("own lock:    " + run(false) + " ms");
+        System.out.println("shared lock: " + run(true) + " ms");
+    }
+}
+```
+
+```sh
+java -Djdk.virtualThreadScheduler.parallelism=1 Locks.java
+```
 
 | Lock | Time | What it means |
 | --- | --- | --- |
-| each task locks its own `new Object()` | **112 ms** | not pinned: all thirty unmounted while asleep |
+| each task locks its own `new Object()` | **112 ms** | not pinned: all thirty unmounted while asleep, one carrier was enough |
 | all tasks lock one shared object | **3016 ms** | **not pinning either**: they queue for the lock, one at a time |
 
-The second row is the trap. It looks like pinning, and it's just a lock doing its job: only one
-thread may hold it. On JDK 21 *both* rows would take about 3000 ms with one carrier, and the
-first row is the pinning one. (That's from JEP 491's description of the old behaviour, not a run:
-only JDK 25 and 26 are installed here.) **Telling those two apart is the point of this section.**
+The second row is the trap. It looks like pinning, but it's just a lock doing its job: only one
+thread may hold it, so thirty 100 ms holds take three seconds on *any* number of carriers. Think of
+a single key to a single room: people queue because there's one key, not because the corridor is
+blocked.
 
-Two more things that changed:
+On JDK 21 *both* rows would take about 3000 ms with one carrier, and there the first row is the
+pinning one: thirty threads that could have slept together, stuck behind one pinned carrier. (That
+comes from JEP 491's description of the old behaviour, not a run: only JDK 25 and 26 are
+installed here.) **Telling "pinned" apart from "waiting for a lock" is the point of this
+section**, and timing alone can't do it. You need a tool.
 
-- `-Djdk.tracePinnedThreads=full`, which most articles tell you to use, is **silently ignored** on
-  JDK 26. No output, no warning.
-- The way to see pinning now is Flight Recorder:
+**The tool.** `-Djdk.tracePinnedThreads=full`, which most articles tell you to use, is
+**silently ignored** on JDK 26: no output, no warning. The way to see pinning now is Flight
+Recorder:
 
-      java -XX:StartFlightRecording=filename=pin.jfr,settings=profile ...
-      jfr print --events jdk.VirtualThreadPinned pin.jfr
+```sh
+java -XX:StartFlightRecording=filename=pin.jfr,settings=profile ...
+jfr print --events jdk.VirtualThreadPinned pin.jfr
+```
 
-  For the experiment above it records **zero** `jdk.VirtualThreadPinned` events, for either row.
+For the experiment above it records **zero** `jdk.VirtualThreadPinned` events, for either row.
+Zero events and 3016 ms together prove it: the slowness is the lock, not pinning.
 
 **What still pins on JDK 26** is a virtual thread blocking while a **native frame** is on its
-stack: Java code called back *from* C. Calling C's `qsort` through the foreign function API with a
-Java comparator that sleeps (one carrier, ten tasks):
+stack, that is, Java code called back *from* C. Calling C's `qsort` through the foreign function
+API with a Java comparator that sleeps (one carrier, ten tasks):
 
-    10 virtual threads, each sleeping 100 ms inside a qsort callback: 1043 ms
+```text
+10 virtual threads, each sleeping 100 ms inside a qsort callback: 1043 ms
+```
 
 That's one after another, and JFR records ten events with
-`pinnedReason = "Native or VM frame on stack"`. The foreign-function API is
+`pinnedReason = "Native or VM frame on stack"`. The foreign function API is
 [doc 23](23-foreign-function-and-memory.md)'s subject, and that's where to try it if you want to.
+
 The point to take from here is simpler: **pinning still exists, it moved, and the old advice to
 avoid `synchronized` is now wrong.**
 
-### T4. `SimpleThreads` on a virtual thread
+### T4. Switching a real program: `SimpleThreads` on a virtual thread
 
-What happens if `concurrency/SimpleThreads.java`, which started its worker as
-`new Thread(new MessageLoop())`, used `Thread.ofVirtual().unstarted(new MessageLoop())` instead,
-run with `5` (give up after five seconds). Verified output:
+Now apply all this to a program in this repo. `concurrency/SimpleThreads.java` starts one worker
+that prints four messages, four seconds apart, while `main` waits for it and gives up after a
+timeout. Switching the worker to a virtual thread is a one-line change:
 
-    main: Starting MessageLoop thread
-    main: Waiting for MessageLoop thread to finish
-    : Mares eat oats
-    main: Tired of waiting!
-    : I wasn't done!
-    main: Finally!
+```diff
+-    Thread t = new Thread(new MessageLoop());
++    Thread t = Thread.ofVirtual().unstarted(new MessageLoop());
+     t.start();
+```
 
-Three things, in order of how likely they are to bite:
+Run with `5` (give up after five seconds), this prints (verified):
 
-- **The name is empty.** Virtual threads are unnamed by default, so the program's whole logging
-  scheme (`threadName + ": " + message`) now prints a leading colon. The fix is to give the
-  thread a name where it is created (T5, and exercise 2). Check what your real logging
-  framework prints for a virtual thread before you switch a production service over.
+```text
+main: Starting MessageLoop thread
+main: Waiting for MessageLoop thread to finish
+: Mares eat oats
+main: Tired of waiting!
+: I wasn't done!
+main: Finally!
+```
+
+The program still works, but three things changed or didn't, in order of how likely they are to
+bite:
+
+- **The name is empty.** A platform thread gets a default name like `Thread-0`; a virtual thread
+  gets no name at all. The program's whole logging scheme is `threadName + ": " + message`, so the
+  worker's lines now start with a bare colon. The fix is to give the thread a name where it's
+  created (T5, and exercise 2). Before you switch a production service over, check what your real
+  logging framework prints for an unnamed thread.
 - **Interruption works exactly as before.** `t.interrupt()` wakes the sleeping virtual thread, and
-  the `catch (InterruptedException e)` runs.
-- **Virtual threads are always daemon threads.** `SimpleThreads` joins its worker, so it doesn't
-  matter here, but a `main` that starts a virtual thread and returns *exits*, killing the
-  thread mid-task. A platform thread would have kept the JVM alive. That is the opposite of the
-  `SumWordsLength` leak fixed in exercise 1, and just as quiet. Exercise 3 runs into it
-  directly.
+  the `catch (InterruptedException e)` runs: that's the `I wasn't done!` line.
+- **Virtual threads are always daemon threads.** The JVM exits when the last non-daemon thread
+  ends, and it doesn't wait for daemon threads. `SimpleThreads` joins its worker, so it doesn't
+  matter there. But look at what happens when `main` doesn't join:
+
+  ```java
+  public class Daemon {
+      public static void main(String[] args) {
+          Thread.ofVirtual().start(() -> {
+              try { Thread.sleep(100); } catch (InterruptedException e) { return; }
+              System.out.println("worker: done");
+          });
+          System.out.println("main: returning");
+      }
+  }
+  ```
+
+  ```text
+  main: returning                                        (verified 2026-11-23)
+  ```
+
+  `worker: done` never prints. `main` returned, no non-daemon thread was left, and the JVM exited
+  with the worker still asleep. No error, no warning. With `new Thread(...)` instead, the JVM
+  would have waited and printed both lines. That's the opposite of the `SumWordsLength` leak from
+  exercise 1 (threads that kept the JVM alive), and just as quiet. Exercise 3 runs straight into
+  it: its `start()` has to wait for every thread it started.
 
 ### T5. Making and naming a thread: the builder
 
 `Thread.ofVirtual()` and `Thread.ofPlatform()` don't give you a thread. They give you a
-**builder**: an object whose job is to make threads. You set it up, then ask it for threads.
+**builder**: an object whose job is to make threads. You set it up first, then ask it for threads,
+and every thread it makes carries the settings. Think of it as a stamp: you set the stamp once,
+then each thread it stamps comes out the same way.
 
 | Call | Returns | What it is |
 | --- | --- | --- |
 | `Thread.ofVirtual()` | `Thread.Builder.OfVirtual` | a builder for virtual threads |
-| `.name("MessageLoop")` | the same builder | the builder, set so the threads it makes get that name |
+| `.name("reporter")` | the same builder | the builder, set so the threads it makes get that name |
 | `.name("worker-", 0)` | the same builder | numbered names: `worker-0`, `worker-1`, ... one per thread made |
 | `.unstarted(runnable)` | `Thread` | a thread, not started yet: call `start()` on it |
 | `.start(runnable)` | `Thread` | a thread, already started |
@@ -163,26 +363,80 @@ So `.name(...)` is a setting, not a value. It returns the builder so you can kee
 
 **The name lives on a thread, not on the builder.** It exists only once the builder has made a
 thread. You read it from *inside* that thread with `Thread.currentThread().getName()`, which asks
-"who is running me?". It gives `main` when the main thread runs it, and the worker's name when
-the worker runs it. That splits the job across two places:
+"who is running me right now?". The same line of code gives `main` when the main thread runs it,
+and the worker's name when the worker runs it. That splits the job across two places:
 
 - **Where a thread is created** is where you choose its name.
 - **Where you print or log** is where you read the name of whoever is running.
 
-**The mistake to recognise** (from `a17baf4`, verified 2026-11-20). Calling `.toString()` on a
-builder doesn't give a name. It gives Java's default text for any object, the class name plus a
-hash:
+Here are both halves in one program, first for a single thread, then for an executor:
 
-    java.lang.ThreadBuilders$VirtualThreadBuilder@7344699f: Starting MessageLoop thread
-    java.lang.ThreadBuilders$VirtualThreadBuilder@3d4eac69: Waiting for MessageLoop thread to finish
+```java
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+
+public class Names {
+    // Where you print: ask who is running this line. Knows nothing about builders.
+    static void log(String message) {
+        System.out.println(Thread.currentThread().getName() + ": " + message);
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        // Where you create: the name is chosen here, once.
+        Thread reporter = Thread.ofVirtual()
+                .name("reporter")
+                .unstarted(() -> log("writing the report"));
+        log("starting " + reporter.getName());
+        reporter.start();
+        reporter.join();
+
+        // The same idea for an executor: a factory that numbers the threads it makes.
+        ThreadFactory factory = Thread.ofVirtual().name("worker-", 0).factory();
+        try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
+            for (int i = 0; i < 3; i++) {
+                executor.submit(() -> log("working"));
+            }
+        }
+    }
+}
+```
+
+```text
+main: starting reporter                                  (verified 2026-11-23)
+reporter: writing the report
+worker-0: working
+worker-1: working
+worker-2: working
+```
+
+`log` is called from three kinds of thread and prints the right name each time, because it reads
+the name at the moment it runs. (The three `worker-` lines can come out in any order: they run
+concurrently.)
+
+**The mistake to recognise** (from `a17baf4`, verified 2026-11-20). It's tempting to write the
+name into the print method instead:
+
+```java
+String threadName = Thread.ofVirtual().name("MessageLoop").toString();   // wrong
+```
+
+That creates a brand-new builder on every call and prints it. Calling `.toString()` on a builder
+doesn't give a name. It gives Java's default text for any object, the class name plus a hash:
+
+```text
+java.lang.ThreadBuilders$VirtualThreadBuilder@7344699f: Starting MessageLoop thread
+java.lang.ThreadBuilders$VirtualThreadBuilder@3d4eac69: Waiting for MessageLoop thread to finish
+```
 
 Each line has a different hash because each call made a new throwaway builder. No thread was ever
-made from any of them, and `main`'s lines are mislabelled too.
+made from any of them, and `main`'s lines are mislabelled too: the print method was supposed to
+*ask* who is running, and instead it *claims* a name.
 
 ### T6. The interrupt flag: propagate it or restore it
 
-`t.interrupt()` doesn't stop a thread. It sets a **flag** on it, a polite request to stop. What
-reads the flag:
+You can't safely force a thread to stop from outside. Java's answer is cooperative:
+`t.interrupt()` doesn't stop `t`. It sets a **flag** on it, a polite request to stop, like a tap on
+the shoulder. The thread has to notice the tap and decide to stop. Three things read the flag:
 
 - **Blocking calls** (`sleep`, `join`, `BlockingQueue.take`, `Future.get`) throw
   `InterruptedException` when the flag is set, and **clear the flag** as they throw. From then on,
@@ -191,8 +445,41 @@ reads the flag:
 - `Thread.interrupted()` (static) reads the flag **and clears it**. That's why exercise 1 uses it
   at the end of a test: to stop the flag leaking into the next test.
 
-So whoever catches `InterruptedException` is holding the cancellation. There are two right moves
-and one wrong one:
+You can watch all three on the main thread:
+
+```java
+public class Flag {
+    public static void main(String[] args) {
+        Thread.currentThread().interrupt();                       // tap our own shoulder
+        System.out.println("isInterrupted: " + Thread.currentThread().isInterrupted());
+        System.out.println("isInterrupted: " + Thread.currentThread().isInterrupted());
+
+        try {
+            Thread.sleep(10);                                     // sees the flag, throws at once
+        } catch (InterruptedException e) {
+            System.out.println("sleep threw, flag now: " + Thread.currentThread().isInterrupted());
+        }
+
+        Thread.currentThread().interrupt();
+        System.out.println("interrupted(): " + Thread.interrupted());
+        System.out.println("interrupted(): " + Thread.interrupted());
+    }
+}
+```
+
+```text
+isInterrupted: true                                      (verified 2026-11-23)
+isInterrupted: true
+sleep threw, flag now: false
+interrupted(): true
+interrupted(): false
+```
+
+`isInterrupted()` can be asked twice and says the same thing. `sleep` throws and wipes the flag.
+`interrupted()` answers once and then wipes it.
+
+So whoever catches `InterruptedException` is holding the cancellation request, and it's the only
+copy. There are two right moves and one wrong one:
 
 | What you do | Flag afterwards | Right? |
 | --- | --- | --- |
@@ -200,10 +487,37 @@ and one wrong one:
 | **Restore**: catch it, call `Thread.currentThread().interrupt()`, then return or throw something else | set again | yes |
 | **Swallow**: catch it and carry on, or return a default | cleared, and nobody knows | no: a cancelled program keeps running |
 
+In code (fragments):
+
+```java
+// Propagate: the method can throw, so let the caller decide.
+int total(Future<Integer> f) throws InterruptedException, ExecutionException {
+    return f.get();
+}
+
+// Restore: run() can't throw a checked exception, so put the flag back and stop.
+Runnable heartbeat = () -> {
+    while (true) {
+        try {
+            Thread.sleep(1_000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();   // the request survives for whoever looks next
+            return;                               // and we actually stop
+        }
+        System.out.println("still alive");
+    }
+};
+
+// Swallow: wrong. The request is gone and the loop goes round again, forever.
+try { Thread.sleep(1_000); } catch (InterruptedException e) { }
+```
+
+Use propagate whenever the method's signature allows it; it's the simplest. Use restore when it
+doesn't: `Runnable.run()` is the usual case, which is why the consumer in exercise 3 has to catch
+the exception, restore the flag, then return.
+
 `SumWordsLength.calculate` propagates, so after the interrupt test the flag is **cleared**
-(verified 2026-11-20). That's correct, not a leak. `Runnable.run()` can't throw a checked
-exception, so a `Runnable` that blocks (the consumer in exercise 3) has to catch it: restore the
-flag, then return.
+(verified 2026-11-20). That's correct, not a leak: the exception carried the request instead.
 
 ### T7. Structured concurrency: not here
 
