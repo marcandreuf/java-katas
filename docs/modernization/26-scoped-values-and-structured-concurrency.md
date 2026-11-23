@@ -201,9 +201,9 @@ That gives one rule, and everything below follows from it:
 Inside the same thread, that's easy: every method `body` calls runs before `body` returns, so
 `greet()` in T2 sees the binding however deep it is.
 
-Other threads are the hard part. A thread you start yourself might outlive the call, so it can't
-see the binding. A fork of a `StructuredTaskScope` can't outlive the call, so it can. Exercise 1's
-TODO 4 asks you to predict what that means for a plain virtual thread started inside a binding.
+Other threads are the hard part. Whether a thread started inside a binding can see it comes down
+to one question: can that thread outlive the call? Exercise 1's TODO 4 asks you to answer it for a
+plain virtual thread started inside a binding.
 **Predict before you read the test.** T4 to T6 are about the kind of thread that *can't* outlive
 the call.
 
