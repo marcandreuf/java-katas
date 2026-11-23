@@ -388,9 +388,6 @@ Facts for TODOs 1 and 2, all verified on JDK 26:
   that pinned the first list would be testing the algorithm, and it would break the day you
   changed the algorithm's name, which is the thing this API exists to let you do (T3).
 
-For TODO 2, the TODO comment asks for the generator's `ints()` stream rather than a loop over
-`nextInt()`. Look at which `ints` overloads exist, and which bound is exclusive.
-
 For TODO 3, `Math.clamp`. Write it with `Math.min` and `Math.max` first, as the TODO says, and run
 the test. Then these, all verified:
 
