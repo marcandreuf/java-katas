@@ -3,8 +3,7 @@ package org.mandfer.practices.concurrency;
 public class SimpleThreads {
 
 	static void printMsgWithCurrentThreadsName(String message) {
-		//String threadName = Thread.currentThread().getName();
-		String threadName = Thread.ofVirtual().name("MessageLoop").toString();
+		String threadName = Thread.currentThread().getName();
 		System.out.println(threadName+": "+message);
 	}
 
@@ -44,7 +43,7 @@ public class SimpleThreads {
 		printMsgWithCurrentThreadsName("Starting MessageLoop thread");
 		long startTime = System.currentTimeMillis();
 		//Thread t = new Thread(new MessageLoop());
-		Thread t = Thread.ofVirtual().unstarted(new MessageLoop());
+		Thread t = Thread.ofVirtual().name("MessageLoop").unstarted(new MessageLoop());
 		t.start();
 
 		printMsgWithCurrentThreadsName("Waiting for MessageLoop thread to finish");
