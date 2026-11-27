@@ -9,8 +9,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OrderGeneratorSimulatorTest {
 
@@ -70,7 +69,19 @@ public class OrderGeneratorSimulatorTest {
     }
 
     @Test
-    void should_interrupt_the_consumers(){
+    void should_keep_the_interrupted_flag_when_consumer_gets_interrupted() throws InterruptedException {
+        BlockingQueue<Order> queue = new LinkedBlockingQueue<>();
+        List<Order> processed = new ArrayList<>();
+        OrderProcessor consumer = new OrderProcessor(queue, processed::add);
+
+        Thread interruptedConsumer = Thread.ofVirtual().name("Interrupted_test").start(consumer::run);
+        interruptedConsumer.interrupt();
+
+        assertEquals(0, queue.size());
+        assertTrue(interruptedConsumer.join(Duration.ofSeconds(1)),
+                "The consumer thread did not get interrupted.");
+        assertTrue(interruptedConsumer.isInterrupted(),
+                "The interrupted thread has not been flagged as interrupted.");
 
     }
 }

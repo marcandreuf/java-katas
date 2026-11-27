@@ -16,11 +16,14 @@ public class OrderProcessor implements Runnable {
     public void run() {
         try {
             while(true){
+                System.out.println("Order processor takes from queue");
                 Order o = queue.take();
                 if(o == STOP_PILL) return;
                 handler.accept(o);
             }
         } catch (InterruptedException e) {
+            String threadName = Thread.currentThread().getName();
+            System.out.println("Order processor thread '"+threadName+"' interrupted.");
             //Restore the flag as we can not throw the exception from inside the run method of a Runnable Object.
             Thread.currentThread().interrupt();
         }

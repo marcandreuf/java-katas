@@ -12,7 +12,7 @@ class OrdersGeneratorSimulator implements Runnable {
     }
     @Override
     public void run() {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < count; i++) {
             Order order = new Order("test_" + i, "code:" + i);
             queue.add(order);
         }
