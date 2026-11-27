@@ -5,8 +5,8 @@ import java.util.function.Consumer;
 
 public class OrderProcessor implements Runnable {
     public static final Order STOP_PILL = new Order("POISON_PILL","000");
-    private BlockingQueue<Order> queue;
-    private Consumer<Order> handler;
+    private final BlockingQueue<Order> queue;
+    private final Consumer<Order> handler;
 
     public OrderProcessor(BlockingQueue<Order> queue, Consumer<Order> handler) {
         this.queue = queue;
@@ -16,7 +16,7 @@ public class OrderProcessor implements Runnable {
     public void run() {
         try {
             while(true){
-                System.out.println("Order processor takes from queue");
+                //System.out.println("Order processor takes from queue");
                 Order o = queue.take();
                 if(o == STOP_PILL) return;
                 handler.accept(o);
