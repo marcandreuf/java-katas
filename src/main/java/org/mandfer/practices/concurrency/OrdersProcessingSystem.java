@@ -1,6 +1,9 @@
 package org.mandfer.practices.concurrency;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  *
@@ -8,8 +11,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class OrdersProcessingSystem {
     
-    private static final ConcurrentLinkedQueue<Order> orderReceiverQueue = 
-      new ConcurrentLinkedQueue<>();
+    private static final BlockingQueue<Order> blockingQueue =
+      new LinkedBlockingQueue<>();
     
     
     public static void main(String[] args){    
@@ -21,16 +24,6 @@ public class OrdersProcessingSystem {
     private void start() {
         
     }
-    
-    
-    class OrdersGeneratorSimulator implements Runnable{
 
-        @Override
-        public void run() {
-            
-        }
-        
-    }
-    
-    
+
 }
