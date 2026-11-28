@@ -278,9 +278,16 @@ Raw material for the bullets above, not the bullets themselves.
 
 **Experiment A**
 
-- Step 2: Yes it compiles and the list can be modified.
+- Step 2: Yes it compiles and the list can be modified because anyone holding a reference to the items 
+   list can modify the list.
 - Step 3: A record is its values, so the hashCode of a record with a mutable list changes when the
   list contents change.
+- Step 4: A compact constructor needs to create new copy of the list so that no one else have the 
+  reference to this new list. If we just wrap the list with unmodifiable, anyone with the reference
+  to the original list can still modify the list. The List.copyOf creates an unmodifiable list.
+- Step 5: A record is equal when each component is equal by its own equals. For Basket that is 
+  List.equals, which compares the elements in order, not the implementation. So an ArrayList and 
+  a List.of list with the same elements in the same order are equal.
 
 **Experiment B**
 
@@ -308,7 +315,7 @@ Raw material for the bullets above, not the bullets themselves.
 
 Review points on the notes above. Each one is something to check or redo, not an answer.
 
-- [ ] **A, step 2:** the note answers "does it compile". Add whether it throws and what the basket
+- [x] **A, step 2:** the note answers "does it compile". Add whether it throws and what the basket
   holds afterwards. That answer changes once step 4 is in.
 - [ ] **A, steps 4 and 5:** not done yet. The note on step 3 describes the problem; the bullet
   needs the fix too: what you had to remember to write, and where it goes.

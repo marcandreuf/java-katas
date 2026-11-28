@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -18,6 +19,14 @@ public class RecordLimitsTest {
     enum OrderStatus {PLACED, PAID, SHIPPED, DELIVERED, CANCELLED}
 
     record Basket(List<String> items) {}
+
+    record UnmodifiableBasket(List<String> items){
+        UnmodifiableBasket{
+            //items = Collections.unmodifiableList(items);
+            items = List.copyOf(items);
+        }
+    }
+
     record OrderShipment(String orderId, String express, int weightGrams, OrderStatus orderStatus){
 
         OrderShipment(String orderId, String express, int weightGrams){
@@ -47,6 +56,20 @@ public class RecordLimitsTest {
 
         b1.items().add("plum");
         assertEquals(3, b1.items().size());
+
+        //Step 4 Unmodifiable
+        List<String> toolbox = createUnmodifiableList();
+        UnmodifiableBasket uBasket = new UnmodifiableBasket(toolbox);
+        toolbox.add("nails");
+        assertFalse(uBasket.items.contains("nails"));
+        assertEquals(1, uBasket.items.size());
+
+        assertThrows(UnsupportedOperationException.class,
+                ()->uBasket.items.add("driver"));
+
+        assertThrows(NullPointerException.class,
+                ()-> new UnmodifiableBasket(null));
+
     }
 
     @Test
@@ -69,6 +92,23 @@ public class RecordLimitsTest {
         fruits1.add("apple");
         return fruits1;
     }
+
+    private static ArrayList<String> createUnmodifiableList(){
+        ArrayList<String> toolbox = new ArrayList<>();
+        toolbox.add("hammer");
+        return toolbox;
+    }
+
+    @Test
+    void should_be_equal_list_types(){
+        Basket bArrayList = new Basket(
+                new ArrayList<>(List.of("a")));
+        Basket bList = new Basket(List.of("a"));
+
+        assertEquals(bArrayList, bList);
+    }
+
+
 
     @Test
     public void experiment_B_multiple_components() {
