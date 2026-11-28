@@ -198,13 +198,15 @@ The field is `final`. That makes the *reference* final, not the list it points t
    the set `contains(basket)`, about the very same object. Then explain the answer using what
    Part one taught you about how a record's `hashCode` is computed. (This is the `HashMap` key
    warning from Part one, step 2, arriving by a side door.)
-4. **Fix it in a compact constructor, two ways.** Reassign the parameter, as in Part one, step 4:
-   - first with `items = Collections.unmodifiableList(items);`
-   - then with the one-call answer from [doc 16](16-collection-factories.md).
+4. **Fix it in a compact constructor.** Reassign the parameter, as in Part one, step 4, so the
+   record keeps its own copy: `items = List.copyOf(items);`. Rerun steps 1, 2 and 3 against the
+   fixed record, predicting each answer first. Which of the three changed from failing silently
+   to failing loudly, and which stopped failing at all?
 
-   Rerun steps 1 and 2 against each version. **They are not equivalent**: one of them still
-   fails step 1. Find out which, and why the word "view" in its Javadoc explains it. Then pass the
-   second version a list containing a `null`.
+   Why `List.copyOf` and not `Collections.unmodifiableList`, and what the copy does when the
+   list contains a `null`: that comparison belongs to collections, not records, so it is in
+   [doc 16](16-collection-factories.md), exercise 1, using this same `Basket`. Here, the point is
+   *where* the fix goes: the record can only defend itself in its own constructor.
 5. **Equality across list types.** Is `new Basket(new ArrayList<>(List.of("a")))` equal to
    `new Basket(List.of("a"))`? Predict, then check, for the unfixed record and the fixed one.
 
@@ -261,9 +263,73 @@ Write down the cost of each route in a sentence. That comparison is the third ex
 - _(fill this in)_
 
 Prompts: a record is only *shallowly* immutable. What happens to `record Basket(List<String>
-items)` when the caller keeps a reference to the list they passed in, and how does a compact
-constructor fix it? ([Doc 16](16-collection-factories.md) gives you the one-call answer.) The
+items)` when the caller keeps a reference to the list they passed in, and what did you have to
+remember to write so it stops? (Which kind of copy, and why a view isn't one, is
+[doc 16](16-collection-factories.md)'s question.) The
 accessor is `name()`, not `getName()`: what does that break in a framework that expects JavaBeans
 getters? What happens to a builder? What does JPA do when you try to make a record an `@Entity`?
 What breaks if a field needs to be mutable later, and how expensive is that change compared with
 the same change to the hand-written class?
+
+### My notes from the experiments
+
+Moved from `src/test/java/org/mandfer/practices/modern/RecordLimitsTest.java`, word for word.
+Raw material for the bullets above, not the bullets themselves.
+
+**Experiment A**
+
+- Step 2: Yes it compiles and the list can be modified.
+- Step 3: A record is its values, so the hashCode of a record with a mutable list changes when the
+  list contents change.
+
+**Experiment B**
+
+1. Without IDE it is difficult to create the record with the right order of arguments.
+2. Swapping arguments and having to add tests is a rabbit hole that we do not need to go. An option
+   to validate the record is to use static validation blocks.
+3. Adding one component could have a major impact to the whole codebase if the records is widely
+   used.
+4. If we go into the route of implementing a Builder for a record we better implement a normal
+   Shipment class so we can control the private visibility of the constructors, and we have full
+   control of the code. The fix is to create more record types and group attributes in a more
+   semantic way.
+
+**Experiment C**
+
+1. To add a status component to the Order record and avoid major refactoring we could add multiple
+   constructors of the record where we can define the default value of any new component.
+2. Well records are targeted to be used as immutable value objects, so if we need to change state
+   we may need to consider refactoring to adapting the record to a normal class.
+3. The OrderShipment records with different status will be not equals.
+4. and 5. Yes going back to a class we go back to mutability and all the necessary implementations
+   for all the methods that we get with a records type.
+
+### What I need to correct or finish before writing the bullets
+
+Review points on the notes above. Each one is something to check or redo, not an answer.
+
+- [ ] **A, step 2:** the note answers "does it compile". Add whether it throws and what the basket
+  holds afterwards. That answer changes once step 4 is in.
+- [ ] **A, steps 4 and 5:** not done yet. The note on step 3 describes the problem; the bullet
+  needs the fix too: what you had to remember to write, and where it goes.
+- [ ] **B, step 2:** "static validation blocks" is the wrong name. What `Shipment` has is a
+  **compact constructor**. Then check whether any validation in it can catch city and postcode
+  swapped, when both are valid `String`s. Answer the doc's question: what would have to exist for
+  a test to catch the swap?
+- [ ] **B, step 4, splitting the record:** "the fix is to create more record types". Check it
+  against `AddressShipment(String street, String city, String postcode)`: can you still swap city
+  and postcode? Decide whether splitting *fixes* steps 1 and 2 or only makes them smaller.
+- [ ] **B, step 4, the other two fixes:** not judged yet. How many lines is the hand-written
+  builder, compared with the one-line record? How many `withX` methods for seven components?
+- [ ] **C, step 1:** the extra constructor keeps `new OrderShipment(...)` compiling. Write a record
+  pattern that takes `OrderShipment` apart, add a component, and check whether the constructor
+  saves the pattern too.
+- [ ] **C, step 2:** the note says "consider a class". The doc asks what goes wrong first: two
+  references to one `PLACED` shipment, `shipped()` called through one. What does the other say?
+- [ ] **C, step 3:** "will be not equal" is the fact. The question is whether a `Set` of open
+  orders *should* treat the paid order as a different order.
+- [ ] **C, steps 4 and 5:** step 5 is not done. Add a field and a setter to the pre-record
+  `Order` (`git show dd55a8a^:src/main/java/org/mandfer/practices/concurrency/Order.java`) and
+  note what broke. Then write one sentence per route on its cost.
+- [ ] **Prompts with no notes yet:** `name()` vs `getName()` in a JavaBeans framework, and a
+  record as a JPA `@Entity`. No experiment covers them; they need trying or reading first.

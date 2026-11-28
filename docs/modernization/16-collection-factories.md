@@ -16,7 +16,7 @@ order. Each one ends with a **Done when** line.
 
 | Exercise | What you do | Theory it uses | Tests |
 | --- | --- | --- | --- |
-| [1. `Immutable`](#exercise-1-collectionsimmutablejava-four-todos) | Fill in four TODOs, one kind of list each. | T1–T3, T5 | `ImmutableTest` exists, `@Disabled`: delete the annotation to start. |
+| [1. `Immutable`](#exercise-1-collectionsimmutablejava-four-todos) | Fill in four TODOs, one kind of list each, then defend doc 01's `Basket` both ways. | T1–T5 | `ImmutableTest` exists, `@Disabled`: delete the annotation to start. |
 | [2. `ArgsRandom`](#exercise-2-argsrandom) | Characterize the shuffle, then decide what the line should be. Two commits. | T2, T4 | None today: write the characterization test first. |
 | [3. `The100DoorsCyberDojoTest`](#exercise-3-the100doorscyberdojotest-the-site-that-isnt-what-it-seemed) | Add the missing assertion, then rewrite `initDoors` with a factory if one fits. | T3, T6 | Add the assertion first. |
 | [4. What got worse](#exercise-4-fill-in-what-got-worse) | Write down three costs. | all | None. |
@@ -390,8 +390,22 @@ write it, write down the difference between "unmodifiable" and "immutable" in yo
 `Collectors.toUnmodifiableList()` (10) throws `NullPointerException` on it. The test uses exactly
 that input.
 
-**Done when:** `ImmutableTest` has no `@Disabled`, all its tests pass, and you've written down the
-unmodifiable/immutable difference.
+**Then go back to doc 01's `Basket`** (`src/test/java/org/mandfer/practices/modern/RecordLimitsTest.java`,
+[doc 01](01-records.md), Experiment A). Doc 01 step 4 gave it a compact constructor with
+`items = List.copyOf(items);`. Add a second record next to it, `ViewBasket`, whose compact
+constructor uses `items = Collections.unmodifiableList(items);` instead. Predict first, then run
+against both:
+
+1. Doc 01's step 1 (the caller adds to the list it passed in) and step 2 (the reader calls
+   `items().add`). **They are not equivalent**: one of them still fails step 1. Which one, and why
+   does the word "view" in its javadoc explain it (T1)?
+2. Construct each with a list containing a `null`. Which constructor throws (T4)?
+3. Call `items().contains(null)` on a basket built without a `null`. Which one throws (T4)?
+
+This is TODO 2's defensive-copy bug again, inside a record whose `final` field made it look safe.
+
+**Done when:** `ImmutableTest` has no `@Disabled`, all its tests pass, you've written down the
+unmodifiable/immutable difference, and both baskets have been run through the three checks above.
 
 ### Exercise 2: `ArgsRandom`
 
