@@ -70,6 +70,9 @@ public class RecordLimitsTest {
         assertThrows(NullPointerException.class,
                 ()-> new UnmodifiableBasket(null));
 
+        assertThrows(NullPointerException.class,
+                ()-> new UnmodifiableBasket(List.of("a",null,"b")));
+
     }
 
     @Test
@@ -104,8 +107,12 @@ public class RecordLimitsTest {
         Basket bArrayList = new Basket(
                 new ArrayList<>(List.of("a")));
         Basket bList = new Basket(List.of("a"));
-
         assertEquals(bArrayList, bList);
+
+        UnmodifiableBasket ubArrayList = new UnmodifiableBasket(
+                new ArrayList<>(List.of("a")));
+        UnmodifiableBasket ubList = new UnmodifiableBasket(List.of("a"));
+        assertEquals(ubArrayList, ubList);
     }
 
 
