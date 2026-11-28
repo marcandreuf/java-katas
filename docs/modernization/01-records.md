@@ -317,7 +317,7 @@ Review points on the notes above. Each one is something to check or redo, not an
 
 - [x] **A, step 2:** the note answers "does it compile". Add whether it throws and what the basket
   holds afterwards. That answer changes once step 4 is in.
-- [ ] **A, steps 4 and 5:** not done yet. The note on step 3 describes the problem; the bullet
+- [x] **A, steps 4 and 5:** not done yet. The note on step 3 describes the problem; the bullet
   needs the fix too: what you had to remember to write, and where it goes.
 - [ ] **B, step 2:** "static validation blocks" is the wrong name. What `Shipment` has is a
   **compact constructor**. Then check whether any validation in it can catch city and postcode
